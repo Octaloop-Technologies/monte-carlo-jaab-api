@@ -1,9 +1,10 @@
-"""CLI demo: ad-hoc single-asset Monte Carlo (V1 financial layer)."""
+"""CLI demo and ASGI entrypoint (``uvicorn main:app``)."""
 
 from __future__ import annotations
 
 import json
 
+from azraq_mc.api import app  # noqa: F401  — exposed for Uvicorn: `uvicorn main:app`
 from azraq_mc.engine import run_adhoc_asset_simulation
 from azraq_mc.schemas import AssetAssumptions, FinancingAssumptions, ShockPackSpec
 
