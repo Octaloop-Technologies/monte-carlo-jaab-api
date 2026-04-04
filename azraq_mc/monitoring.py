@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from azraq_mc.engine import run_adhoc_asset_simulation
-from azraq_mc.schemas import AssetAssumptions, ShockPackSpec, SimulationResult
+from azraq_mc.schemas import AssetAssumptions, PerformanceProfile, ShockPackSpec, SimulationResult
 from azraq_mc.snapshots import save_snapshot
 
 
@@ -16,7 +16,10 @@ def run_scheduled_asset_simulation(
     persist: bool = True,
     model_version: str = "azraq-mc-v1",
     include_attribution: bool = False,
+    include_advanced_attribution: bool = False,
     user_id: str | None = None,
+    performance_profile: PerformanceProfile | None = None,
+    shockpack_catalog_entry_id: str | None = None,
 ) -> tuple[SimulationResult, Path | None]:
     """
     Mode 2 — scheduled monitoring: Monte Carlo refresh with optional JSON snapshot for drift tracking.
@@ -26,8 +29,11 @@ def run_scheduled_asset_simulation(
         asset,
         model_version=model_version,
         include_attribution=include_attribution,
+        include_advanced_attribution=include_advanced_attribution,
         execution_mode="scheduled_monitoring",
         user_id=user_id,
+        performance_profile=performance_profile,
+        shockpack_catalog_entry_id=shockpack_catalog_entry_id,
     )
     if not persist:
         return result, None

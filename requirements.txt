@@ -7,4 +7,7 @@ uvicorn[standard]>=0.27
 numpy-financial>=1.0
 pytest>=7.4
 hypothesis>=6.98
+yfinance>=0.2.40
+pandas>=2.1
+openpyxl>=3.1
 # numba>=0.59  # optional: faster IRR batch; pip may fail on very new Python—install if supported

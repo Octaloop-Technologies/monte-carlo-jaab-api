@@ -10,10 +10,18 @@ def apply_factor_transforms_z(z: np.ndarray, t: AssetFactorTransforms | None) ->
     if t is None:
         return z
     z = np.asarray(z, dtype=np.float64).copy()
-    z[:, 0] *= t.revenue_shock_scale
-    z[:, 1] *= t.capex_shock_scale
-    z[:, 2] *= t.opex_shock_scale
-    z[:, 3] *= t.rate_shock_scale
+    if z.ndim == 2:
+        z[:, 0] *= t.revenue_shock_scale
+        z[:, 1] *= t.capex_shock_scale
+        z[:, 2] *= t.opex_shock_scale
+        z[:, 3] *= t.rate_shock_scale
+    elif z.ndim == 3:
+        z[:, 0, :] *= t.revenue_shock_scale
+        z[:, 1, :] *= t.capex_shock_scale
+        z[:, 2, :] *= t.opex_shock_scale
+        z[:, 3, :] *= t.rate_shock_scale
+    else:
+        raise ValueError("z must be 2d or 3d")
     return z
 
 

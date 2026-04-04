@@ -77,6 +77,19 @@ def main() -> None:
     ok("GET /v1/catalog/full-stack-factors", r)
     print("GET /v1/catalog/full-stack-factors", r.status_code, "keys", list(r.json().keys()) if r.status_code == 200 else r.text[:200])
 
+    r = c.get("/v1/calibration/stress-data-catalog", headers=h)
+    ok("GET /v1/calibration/stress-data-catalog", r)
+    print(
+        "GET /v1/calibration/stress-data-catalog",
+        r.status_code,
+        "n_sources",
+        len(r.json().get("sources", [])) if r.status_code == 200 else None,
+    )
+
+    r = c.get("/v1/market/ecb/eur-usd", headers=h)
+    ok("GET /v1/market/ecb/eur-usd", r)
+    print("GET /v1/market/ecb/eur-usd", r.status_code, r.json().get("one_eur_in_usd") if r.status_code == 200 else r.text[:120])
+
     # 3 simulate asset
     body = {"shockpack": _min_shock(), "asset": _min_asset(), "include_attribution": True}
     r = c.post("/v1/simulate/asset", json=body, headers=h)

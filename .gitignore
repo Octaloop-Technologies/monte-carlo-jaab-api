@@ -1,6 +1,8 @@
 .env
 .venv/
 venv/
+# Removed legacy FastAPI app; folder may only contain a local .venv — not part of the product
+Monte Carlo/
 __pycache__/
 *.py[cod]
 .pytest_cache/

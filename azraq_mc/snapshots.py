@@ -8,6 +8,7 @@ from typing import Any, Literal
 
 from pydantic import TypeAdapter
 
+from azraq_mc.response_help import SNAPSHOT_DIFF
 from azraq_mc.schemas import BaseCaseResult, PortfolioSimulationResult, SavedSnapshot, SimulationResult
 
 
@@ -76,11 +77,35 @@ def metrics_delta(a: JsonDict, b: JsonDict, *, prefix: str = "") -> JsonDict:
     return out
 
 
+def diff_simulation_provenance(
+    before: SimulationResult,
+    after: SimulationResult,
+) -> dict[str, Any]:
+    """Mode 2 — structured deltas: what changed between runs (assumptions vs shock vs model)."""
+    bm, am = before.metadata, after.metadata
+    return {
+        "asset_id_changed": bm.asset_id != am.asset_id,
+        "assumption_set_changed": bm.assumption_set_id != am.assumption_set_id,
+        "shockpack_id_changed": bm.shockpack_id != am.shockpack_id,
+        "seed_changed": bm.seed != am.seed,
+        "n_scenarios_changed": bm.n_scenarios != am.n_scenarios,
+        "sampling_method_changed": bm.sampling_method != am.sampling_method,
+        "model_version_changed": bm.model_version != am.model_version,
+        "layer_versions_delta": metrics_delta(bm.layer_versions or {}, am.layer_versions or {}),
+        "catalog_entry": {"before": bm.shockpack_catalog_entry_id, "after": am.shockpack_catalog_entry_id},
+        "performance_profile": {"before": bm.performance_profile, "after": am.performance_profile},
+    }
+
+
 def diff_simulation_results(
     before: SimulationResult,
     after: SimulationResult,
 ) -> dict[str, Any]:
-    return metrics_delta(
-        before.metrics.model_dump(mode="json"),
-        after.metrics.model_dump(mode="json"),
-    )
+    return {
+        "metrics_delta": metrics_delta(
+            before.metrics.model_dump(mode="json"),
+            after.metrics.model_dump(mode="json"),
+        ),
+        "provenance_delta": diff_simulation_provenance(before, after),
+        "response_help": dict(SNAPSHOT_DIFF),
+    }

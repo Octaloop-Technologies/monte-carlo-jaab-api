@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+import time
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
 
 import numpy as np
 
+from azraq_mc.calibration_sources import materialize_shockpack_margins
 from azraq_mc.cache import get_or_build_shock_array
 from azraq_mc.impact import financial_impact
 from azraq_mc.metrics import build_financial_metrics, distribution_summary
+from azraq_mc.performance import apply_performance_profile
 from azraq_mc.schemas import (
     AssetAssumptions,
     PerAssetMetrics,
+    PerformanceProfile,
     PortfolioMetrics,
     PortfolioRunMetadata,
     PortfolioSimulationResult,
@@ -31,6 +35,8 @@ def run_portfolio_joint_simulation(
     progress: Callable[[int, int], None] | None = None,
     user_id: str | None = None,
     layer_versions: dict[str, str] | None = None,
+    performance_profile: PerformanceProfile | None = None,
+    shockpack_catalog_entry_id: str | None = None,
 ) -> PortfolioSimulationResult:
     """
     Mode 3 — joint simulation: every asset sees the same ShockPack realisations (same scenario index).
@@ -41,6 +47,9 @@ def run_portfolio_joint_simulation(
     if len(set(ids)) != len(ids):
         raise ValueError("duplicate asset_id in portfolio")
 
+    t0 = time.perf_counter()
+    shock_spec = apply_performance_profile(shock_spec, performance_profile)
+    shock_spec, cal_trace = materialize_shockpack_margins(shock_spec)
     shocks = get_or_build_shock_array(shock_spec)
     n = shock_spec.n_scenarios
     dscr_cols: list[np.ndarray] = []
@@ -53,14 +62,25 @@ def run_portfolio_joint_simulation(
     hhi = float(np.sum(w**2))
 
     for j, a in enumerate(assets):
-        out = financial_impact(shocks, a, margins=shock_spec.margins)
-        metrics = build_financial_metrics(out.dscr, out.irr, a.financing.covenant_dscr)
+        out = financial_impact(shocks, a, margins=shock_spec.margins, shock_spec=shock_spec)
+        dsra_drag = (out.extensions or {}).get("waterfall_dsra_mean_annual")
+        metrics = build_financial_metrics(
+            out.dscr,
+            out.irr,
+            a.financing.covenant_dscr,
+            ebitda=out.ebitda,
+            levered_cf=out.levered_cf,
+            nav_proxy_equity=out.nav_proxy_equity,
+            liquidity_runway_months=out.liquidity_runway_months,
+            waterfall_dsra_avg_drag=dsra_drag,
+            structural_pd_from_dscr=True,
+        )
         per_asset.append(
             PerAssetMetrics(asset_id=a.asset_id, assumption_set_id=a.assumption_set_id, metrics=metrics)
         )
         dscr_cols.append(np.where(np.isfinite(out.dscr), out.dscr, np.nan))
         breach_cols.append((np.isfinite(out.dscr) & (out.dscr < a.financing.covenant_dscr)).astype(np.float64))
-        cf_sum += (out.ebitda - out.debt_service) * (1.0 - a.tax_rate)
+        cf_sum += out.levered_cf
         if progress is not None:
             progress(j + 1, len(assets))
 
@@ -105,5 +125,9 @@ def run_portfolio_joint_simulation(
         execution_mode="portfolio_joint",
         user_id=user_id,
         layer_versions=layer_versions or layer_versions_bundle(),
+        margin_calibration_trace=cal_trace,
+        shockpack_catalog_entry_id=shockpack_catalog_entry_id,
+        compute_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+        performance_profile=performance_profile,
     )
     return PortfolioSimulationResult(metadata=meta, per_asset=per_asset, portfolio=portfolio)

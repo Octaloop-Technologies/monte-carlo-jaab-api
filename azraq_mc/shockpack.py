@@ -63,12 +63,49 @@ def generate_correlated_z(spec: ShockPackSpec) -> np.ndarray:
     return apply_copula(z_corr, spec)
 
 
+def generate_correlated_z_paths(spec: ShockPackSpec) -> np.ndarray:
+    """
+    Shape (n_scenarios, n_factors) when time_grid absent or n_periods==1;
+    else (n_scenarios, n_factors, n_periods) with iid or AR(1) temporal dynamics.
+    """
+    tg = spec.time_grid
+    if tg is None or tg.n_periods <= 1:
+        return generate_correlated_z(spec)
+
+    corr = _validate_correlation(np.asarray(spec.correlation, dtype=np.float64))
+    l = np.linalg.cholesky(corr)
+    n, dim, t_max = spec.n_scenarios, corr.shape[0], tg.n_periods
+
+    def step_innov(seed_off: int) -> np.ndarray:
+        z0 = generate_standard_normals(n, dim, int(spec.seed) + seed_off, spec.sampling_method)
+        return apply_copula(z0 @ l.T, spec)
+
+    if tg.dynamics == "iid":
+        z = np.empty((n, dim, t_max), dtype=np.float64)
+        for t in range(t_max):
+            z[:, :, t] = step_innov(10_001 + t)
+        return z
+
+    if tg.dynamics == "ar1":
+        phi = float(tg.ar1_phi)
+        scale = float(np.sqrt(max(1e-12, 1.0 - phi**2)))
+        z = np.empty((n, dim, t_max), dtype=np.float64)
+        z[:, :, 0] = step_innov(0)
+        for t in range(1, t_max):
+            z[:, :, t] = phi * z[:, :, t - 1] + scale * step_innov(10_001 + t)
+        return z
+
+    raise ValueError(f"unknown path dynamics: {tg.dynamics}")
+
+
 def build_shock_array(spec: ShockPackSpec) -> ShockArray:
-    z = generate_correlated_z(spec)
+    z = generate_correlated_z_paths(spec)
+    n_periods = int(z.shape[2]) if z.ndim == 3 else 1
     return ShockArray(
         shockpack_id=spec.shockpack_id,
         seed=spec.seed,
         n_scenarios=spec.n_scenarios,
         factor_order=spec.factor_order,
+        n_periods=n_periods,
         z=z,
     )
