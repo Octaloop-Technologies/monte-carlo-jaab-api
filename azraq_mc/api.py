@@ -8,6 +8,7 @@ from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, WebSocket
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from azraq_mc.api_audit import audit_simulation
@@ -575,3 +576,12 @@ async def ws_simulate_portfolio(ws: WebSocket) -> None:
         await ws.send_json({"type": "error", "detail": str(e)})
     finally:
         await ws.close()
+
+
+_frontend_dir = _ROOT / "frontend"
+if _frontend_dir.is_dir():
+    app.mount(
+        "/app",
+        StaticFiles(directory=str(_frontend_dir), html=True),
+        name="v0_frontend",
+    )

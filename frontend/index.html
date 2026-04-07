@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Azraq Monte Carlo — V0 scenario lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <p class="brand-kicker">Risk engine</p>
+            <h1 class="brand-title">Monte Carlo scenario lab</h1>
+          </div>
+        </div>
+        <p class="topbar-note">Served from <code>/app/</code> · same host as the API</p>
+      </div>
+      <p class="lede">
+        Add optional <strong>level shocks</strong> on top of a full Monte Carlo (all factors still draw randomly).
+        Copper / materials map to <strong>CAPEX %</strong>; power &amp; CPI-style pressure to <strong>OPEX %</strong>;
+        <strong>basis points</strong> add to the loan coupon. Set everything to zero for a plain stochastic run on the JSON only.
+      </p>
+    </header>
+
+    <main class="main">
+      <section class="card card--accent">
+        <header class="card-header">
+          <span class="step">1</span>
+          <div>
+            <h2 class="card-title">Shock assumptions</h2>
+            <p class="card-sub">Positive % = higher cost exposure; negative % = relief. All fields optional.</p>
+          </div>
+        </header>
+
+        <div class="shock-columns">
+          <fieldset class="field-group">
+            <legend class="field-group-legend">Construction &amp; operations</legend>
+
+            <div class="field">
+              <div class="field-label-row">
+                <label class="field-label" for="capexPct">Copper &amp; materials → effective CAPEX</label>
+                <span class="unit-pill">% vs baseline</span>
+              </div>
+              <div class="dual-control">
+                <input type="range" id="capexPctRange" class="range" min="-50" max="100" step="0.5" value="0" aria-label="CAPEX percent slider" />
+                <input type="number" id="capexPct" class="input-num" value="0" step="0.5" min="-50" max="100" />
+              </div>
+              <p class="field-help">Example: <strong>+20</strong> raises CAPEX exposure ~20%; <strong>−15</strong> lowers it ~15%.</p>
+            </div>
+
+            <div class="field">
+              <div class="field-label-row">
+                <label class="field-label" for="opexPct">Power, CPI &amp; other OPEX</label>
+                <span class="unit-pill">% vs baseline</span>
+              </div>
+              <div class="dual-control">
+                <input type="range" id="opexPctRange" class="range" min="-50" max="100" step="0.5" value="0" aria-label="OPEX percent slider" />
+                <input type="number" id="opexPct" class="input-num" value="0" step="0.5" min="-50" max="100" />
+              </div>
+              <p class="field-help">Applied on the operating-cost shock path in the model.</p>
+            </div>
+          </fieldset>
+
+          <fieldset class="field-group">
+            <legend class="field-group-legend">Debt &amp; rates</legend>
+
+            <div class="field">
+              <div class="field-label-row">
+                <label class="field-label" for="rateBps">Extra interest on drawn debt</label>
+                <span class="unit-pill">basis points</span>
+              </div>
+              <div class="dual-control">
+                <input type="range" id="rateBpsRange" class="range" min="-500" max="2000" step="25" value="0" aria-label="Rate basis points slider" />
+                <input type="number" id="rateBps" class="input-num" value="0" step="25" min="-500" max="2000" />
+              </div>
+              <p class="field-help">Added to the coupon in your JSON (e.g. <strong>200</strong> bps = +2.00% p.a. absolute).</p>
+            </div>
+          </fieldset>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="card-header">
+          <span class="step step--muted">2</span>
+          <div>
+            <h2 class="card-title">Simulation settings</h2>
+            <p class="card-sub">Control path count and reproducibility.</p>
+          </div>
+        </header>
+
+        <div class="sim-grid">
+          <div class="field field--compact">
+            <label class="field-label" for="nScenarios">Paths (scenarios)</label>
+            <input type="number" id="nScenarios" class="input-text" min="100" max="50000" value="2500" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="seed">Random seed</label>
+            <input type="number" id="seed" class="input-text" value="42" />
+          </div>
+        </div>
+
+        <label class="chk">
+          <input type="checkbox" id="yahooCopper" />
+          <span class="chk-text">Calibrate <strong>CAPEX volatility</strong> (<code>capex_log_sigma</code>) from Yahoo Finance closes. Separate from the % shocks above; needs internet and <code>yfinance</code> on the API server.</span>
+        </label>
+
+        <div class="yahoo-panel yahoo-panel--disabled" id="yahooPanel" aria-labelledby="yahooHeading">
+          <p id="yahooHeading" class="yahoo-panel-title">Yahoo Finance — volatility calibration</p>
+          <div class="yahoo-grid">
+            <div class="field field--compact">
+              <label class="field-label" for="yahooSymbol">Ticker symbol</label>
+              <input type="text" id="yahooSymbol" class="input-text" value="HG=F" placeholder="e.g. HG=F, ^GSPC" autocomplete="off" spellcheck="false" disabled />
+              <p class="field-help">Copper futures <code>HG=F</code>, or any symbol Yahoo returns history for.</p>
+            </div>
+            <div class="field field--compact">
+              <label class="field-label" for="yahooPeriod">History window</label>
+              <select id="yahooPeriod" class="input-text" disabled>
+                <option value="1d">1 day</option>
+                <option value="5d">5 days</option>
+                <option value="1mo">1 month</option>
+                <option value="3mo">3 months</option>
+                <option value="6mo">6 months</option>
+                <option value="1y" selected>1 year</option>
+                <option value="2y">2 years</option>
+                <option value="5y">5 years</option>
+                <option value="10y">10 years</option>
+                <option value="ytd">Year to date</option>
+                <option value="max">Max</option>
+              </select>
+              <p class="field-help">Passed to the API as <code>period</code> (see <code>/docs</code>).</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-box" id="shockSummary" role="status" aria-live="polite"></div>
+
+        <div class="run-footer">
+          <button type="button" id="runBtn" class="btn-primary">Run simulation</button>
+          <p id="status" class="run-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="card-header card-header--row">
+          <div>
+            <span class="step step--muted">3</span>
+            <h2 class="card-title card-title--inline">Project baseline</h2>
+            <span class="badge">JSON</span>
+          </div>
+          <button type="button" id="resetAsset" class="btn-ghost">Reset template</button>
+        </header>
+        <p class="card-sub card-sub--tight">Revenue, CAPEX, debt, and covenants. Shocks in step 1 apply on top of this baseline.</p>
+        <textarea id="assetJson" rows="14" spellcheck="false" class="ta-json"></textarea>
+      </section>
+
+      <section class="card card--results" id="resultsWrap" hidden>
+        <header class="card-header">
+          <span class="step step--muted">4</span>
+          <h2 class="card-title">Results</h2>
+        </header>
+
+        <div class="results-grid">
+          <div class="results-panel results-panel--wide non-tech-panel" id="nonTechPanel">
+            <h3 class="results-heading">Simple picture (for everyone)</h3>
+            <p class="chart-caption">
+              No Greek letters: traffic lights, everyday words, and “bad / typical / good” outcomes. Detailed charts are below.
+            </p>
+            <div id="plainStoryBody" class="plain-story-body"></div>
+            <h4 class="non-tech-sub">Can we pay the loan? (DSCR — cash vs debt)</h4>
+            <p class="chart-caption chart-caption--tight">
+              Higher is safer. The <strong class="cap-note">red line</strong> in the chart below is your bank’s minimum.
+            </p>
+            <div id="simpleDscrBody" class="outcome-strip"></div>
+            <h4 class="non-tech-sub">Investor return (IRR — yearly return on equity)</h4>
+            <p class="chart-caption chart-caption--tight">Shown as a percent per year so it reads like an interest rate on your money.</p>
+            <div id="simpleIrrBody" class="outcome-strip"></div>
+          </div>
+
+          <div class="results-panel results-panel--wide">
+            <h3 class="results-heading">Summary</h3>
+            <div class="table-wrap">
+              <table class="data" id="tblSummary">
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="results-panel results-panel--wide">
+            <h3 class="results-heading">What this run says</h3>
+            <p class="chart-caption">
+              Short notes for specialists (tail risk, spread). Compare to your last run when you run twice.
+            </p>
+            <div id="insightCards" class="insight-cards"></div>
+            <div id="trendPanel" class="trend-panel" hidden>
+              <h4 class="trend-title">Change vs your last run</h4>
+              <div id="trendCompare" class="trend-grid"></div>
+            </div>
+          </div>
+
+          <div class="results-panel results-panel--wide">
+            <h3 class="results-heading">Loan coverage range (DSCR)</h3>
+            <p class="chart-caption">
+              <strong>Green band</strong>: where most simulation outcomes land. <strong>White tick</strong>: middle / typical outcome.
+              <strong class="cap-note">Red line</strong>: minimum cash cover the loan allows (covenant).
+            </p>
+            <div id="dscrBandChart" class="h-band-wrap"></div>
+          </div>
+
+          <div class="results-panel results-panel--wide">
+            <h3 class="results-heading">Investor return range (IRR)</h3>
+            <p class="chart-caption">
+              Band = most outcomes from weak to strong. <strong>Grey</strong> line = break-even (0% return).
+              <strong>Gold</strong> line = your target return if you typed a hurdle under results.
+            </p>
+            <div id="irrBandChart" class="h-band-wrap"></div>
+          </div>
+
+          <div class="results-panel results-panel--wide">
+            <h3 class="results-heading">How often bad things happen (0–100%)</h3>
+            <p class="chart-caption">
+              Each bar is “out of 100 simulated futures, how many hit this problem?” Lower is better.
+            </p>
+            <div id="riskProbChart" class="hbar-chart"></div>
+          </div>
+
+          <div class="results-panel">
+            <h3 class="results-heading">Breaking the loan rule (simulated)</h3>
+            <p class="chart-caption">Share of futures where cash coverage dips below what the bank required.</p>
+            <div id="breachGauge" class="gauge-wrap"></div>
+          </div>
+
+          <div class="results-panel">
+            <h3 class="results-heading">Loan coverage — weak to strong outcomes</h3>
+            <p class="chart-caption">
+              Bars left → right: rough patch · weak · typical · strong · very strong (stat labels p5–p95).
+            </p>
+            <div class="bar-chart bar-chart--tall" id="dscrBars"></div>
+          </div>
+          <div class="results-panel">
+            <h3 class="results-heading">Investor return — weak to strong outcomes</h3>
+            <p class="chart-caption">
+              Same idea: left is a bad draw for returns, right is a very good draw (stat labels p5–p95).
+            </p>
+            <div class="bar-chart bar-chart--tall" id="irrBars"></div>
+          </div>
+
+          <div class="results-panel results-panel--wide">
+            <h3 class="results-heading">Return — worst cases vs middle vs upside</h3>
+            <p class="chart-caption">
+              <strong>Rough patch</strong> = bad end of returns · <strong>Worst 5% average</strong> = average of really bad draws ·
+              <strong>Typical</strong> = middle · <strong>Strong</strong> = good draw.
+            </p>
+            <div class="bar-chart bar-chart--tall" id="irrTailBars"></div>
+          </div>
+
+          <div class="results-panel results-panel--wide" id="cashDistPanel" hidden>
+            <div class="cash-split cash-split--charts">
+              <div>
+                <h3 class="results-heading">Operating cash (EBITDA) — weak to strong</h3>
+                <div class="bar-chart bar-chart--tall" id="ebitdaDistBars"></div>
+              </div>
+              <div>
+                <h3 class="results-heading">Cash after debt — weak to strong</h3>
+                <div class="bar-chart bar-chart--tall" id="leveredCfDistBars"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="results-panel results-panel--wide" id="navPanel" hidden>
+            <h3 class="results-heading">Equity value (simple model estimate)</h3>
+            <p class="chart-caption">
+              Rough “what shareholders might be worth” at the end of the horizon: band = most outcomes, tick = middle case.
+            </p>
+            <div id="navBandChart" class="h-band-wrap"></div>
+          </div>
+
+          <div class="results-panel results-panel--wide" id="cashPanel" hidden>
+            <h3 class="results-heading">Cash ranges at a glance</h3>
+            <p class="chart-caption">Each line: low case · middle · high case for operating cash and cash after debt.</p>
+            <div class="cash-split">
+              <div id="ebitdaMini" class="mini-fan"></div>
+              <div id="leveredCfMini" class="mini-fan"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hurdle-block">
+          <label class="field-label" for="hurdle">Target yearly return for investors (decimal: 0.08 = 8% per year)</label>
+          <input type="number" id="hurdle" class="input-text input-text--narrow" step="0.005" placeholder="0.08" />
+          <p id="hurdleMsg" class="field-help"></p>
+        </div>
+
+        <h3 class="results-heading">Raw response</h3>
+        <pre class="raw" id="rawOut"></pre>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>OpenAPI <a href="/docs">/docs</a> · <code>docs/API.md</code></p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
