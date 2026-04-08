@@ -341,7 +341,13 @@ class YahooFinanceVolBinding(BaseModel):
     symbol: str
     period: str = Field(
         default="1y",
-        description="yfinance history period: 1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max",
+        description="yfinance history period when `history_days` is unset: 1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max",
+    )
+    history_days: int | None = Field(
+        default=None,
+        ge=1,
+        le=10_000,
+        description="Optional calendar-day lookback: fetch via start/end (overrides `period`).",
     )
     target: MarginSigmaField
     scale: float = Field(default=1.0, gt=0, description="Multiplier after annualisation (tweak units / conservatism)")

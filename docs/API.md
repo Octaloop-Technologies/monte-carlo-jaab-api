@@ -70,7 +70,7 @@ Applied in order: **`file`** → **`http`** → each **`yahoo_finance`** binding
 |-------|------|--------|
 | `file` | object \| null | `{ "path": "<path>", "mode": "overlay" \| "replace", "sheet": 0 }` — **JSON** (margin object or `{ "margins": { ... } }`) or **Excel** `.xlsx`/`.xlsm`: either columns `key`/`field`/`margin` + `value`/`sigma`, **or** a **wide** table whose headers are `RiskFactorMargins` field names (`revenue_log_sigma`, …) and the **first data row** holds numbers. `sheet` is the Excel sheet name or index (ignored for JSON). |
 | `http` | object \| null | `{ "url": "https://...", "timeout_sec": 30, "headers": {}, "mode": "overlay" \| "replace" }` — same JSON shape as file |
-| `yahoo_finance` | array | Each item: `{ "symbol": "^GSPC", "period": "1y", "target": "revenue_log_sigma" \| "capex_log_sigma" \| "opex_log_sigma" \| "rate_shock_sigma", "scale": 1.0, "annualization_factor": 252, "min_observations": 20 }` — annualised log-return volatility |
+| `yahoo_finance` | array | Each item: `{ "symbol", "period" (yfinance preset: `1d`…`max`), optional `"history_days"` (calendar-day lookback; overrides `period`), "target", "scale", "annualization_factor", "min_observations" }` — annualised log-return volatility from closes |
 
 **Security:** HTTP/file paths are evaluated in the API process environment. Only allow trusted URLs and paths in production (SSRF / arbitrary file read risk).
 

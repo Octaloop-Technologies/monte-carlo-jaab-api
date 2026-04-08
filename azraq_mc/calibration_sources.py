@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -133,9 +134,18 @@ def _annualised_sigma_from_yahoo(binding: YahooFinanceVolBinding) -> float:
         ) from e
 
     ticker = yf.Ticker(binding.symbol)
-    hist = ticker.history(period=binding.period)
+    if binding.history_days is not None:
+        end = datetime.now(timezone.utc).date()
+        start = end - timedelta(days=int(binding.history_days))
+        hist = ticker.history(start=start.isoformat(), end=(end + timedelta(days=1)).isoformat())
+        window = f"last_{binding.history_days}_calendar_days"
+    else:
+        hist = ticker.history(period=binding.period)
+        window = binding.period
     if hist.empty or "Close" not in hist.columns:
-        raise ValueError(f"no Yahoo Finance history for symbol={binding.symbol!r} period={binding.period!r}")
+        raise ValueError(
+            f"no Yahoo Finance history for symbol={binding.symbol!r} window={window!r}"
+        )
     close = np.asarray(hist["Close"].astype(float), dtype=np.float64)
     close = close[np.isfinite(close) & (close > 0)]
     if close.size < binding.min_observations + 1:
@@ -198,17 +208,18 @@ def materialize_shockpack_margins(spec: ShockPackSpec) -> tuple[ShockPackSpec, d
         sigma = _annualised_sigma_from_yahoo(bind)
         key = bind.target
         setattr(margins, key, sigma)
-        trace["steps"].append(
-            {
-                "source": "yahoo_finance",
-                "symbol": bind.symbol,
-                "period": bind.period,
-                "target": key,
-                "annualized_sigma": sigma,
-                "scale": bind.scale,
-                "annualization_factor": bind.annualization_factor,
-            }
-        )
+        step: dict[str, Any] = {
+            "source": "yahoo_finance",
+            "symbol": bind.symbol,
+            "period": bind.period,
+            "target": key,
+            "annualized_sigma": sigma,
+            "scale": bind.scale,
+            "annualization_factor": bind.annualization_factor,
+        }
+        if bind.history_days is not None:
+            step["history_days"] = bind.history_days
+        trace["steps"].append(step)
 
     out = spec.model_copy(deep=True)
     out.margins = margins

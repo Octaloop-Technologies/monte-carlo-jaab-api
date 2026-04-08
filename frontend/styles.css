@@ -489,6 +489,21 @@ code {
   }
 }
 
+.yahoo-grid--aligned {
+  align-items: start;
+}
+
+.yahoo-grid--aligned .input-text,
+.yahoo-grid--aligned select.input-text {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.yahoo-grid--aligned .yahoo-field-span {
+  grid-column: 1 / -1;
+}
+
 .summary-box {
   margin-top: 0.6rem;
   padding: 0.55rem 0.75rem;

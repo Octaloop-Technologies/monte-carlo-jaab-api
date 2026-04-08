@@ -115,7 +115,7 @@ def test_yahoo_finance_binding_updates_target():
         def __init__(self, symbol: str) -> None:
             self.symbol = symbol
 
-        def history(self, period: str):  # noqa: ARG002
+        def history(self, period=None, start=None, end=None, **kwargs):  # noqa: ARG002
             return df
 
     with patch("yfinance.Ticker", FakeTicker):
@@ -125,3 +125,43 @@ def test_yahoo_finance_binding_updates_target():
     assert out.margins.revenue_log_sigma > 0.01
     assert trace is not None
     assert any(s.get("source") == "yahoo_finance" for s in trace["steps"])
+
+
+def test_yahoo_finance_binding_uses_history_days():
+    spec = ShockPackSpec(
+        shockpack_id="s",
+        seed=1,
+        n_scenarios=100,
+        margins=RiskFactorMargins(revenue_log_sigma=0.01),
+        dynamic_margins=DynamicMarginsSpec(
+            yahoo_finance=[
+                YahooFinanceVolBinding(
+                    symbol="TEST",
+                    period="1y",
+                    history_days=60,
+                    target="revenue_log_sigma",
+                    min_observations=5,
+                )
+            ],
+        ),
+    )
+    rng = np.random.default_rng(1)
+    rets = rng.normal(0.001, 0.02, size=40)
+    close = 100.0 * np.cumprod(1.0 + rets)
+    df = pd.DataFrame({"Close": close.astype(np.float64)})
+
+    class FakeTicker:
+        def __init__(self, symbol: str) -> None:
+            self.symbol = symbol
+
+        def history(self, period=None, start=None, end=None, **kwargs):  # noqa: ARG002
+            assert start is not None and end is not None
+            return df
+
+    with patch("yfinance.Ticker", FakeTicker):
+        out, trace = materialize_shockpack_margins(spec)
+
+    assert out.dynamic_margins is None
+    assert out.margins.revenue_log_sigma > 0.01
+    yahoo_steps = [s for s in trace["steps"] if s.get("source") == "yahoo_finance"]
+    assert yahoo_steps[0].get("history_days") == 60
