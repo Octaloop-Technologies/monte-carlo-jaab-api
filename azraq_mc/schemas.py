@@ -492,6 +492,10 @@ class FinancialRiskMetrics(BaseModel):
     cvar_irr_95: float | None = Field(
         default=None, description="Mean IRR in the worst 5% of scenarios (simple average below p05)"
     )
+    total_capex: DistributionSummary | None = Field(
+        default=None,
+        description="Distribution of total nominal CAPEX per scenario (initial_capex × stochastic multiplier)",
+    )
     ebitda: DistributionSummary | None = Field(default=None, description="Mean-over-period EBITDA per scenario")
     var_ebitda_95: float | None = Field(
         default=None, description="Median minus p05 EBITDA (downside width), same units as EBITDA",

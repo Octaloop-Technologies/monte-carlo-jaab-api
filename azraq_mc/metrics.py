@@ -63,6 +63,7 @@ def build_financial_metrics(
     covenant_dscr: float,
     *,
     default_threshold_dscr: float = 1.0,
+    total_capex: np.ndarray | None = None,
     ebitda: np.ndarray | None = None,
     levered_cf: np.ndarray | None = None,
     nav_proxy_equity: np.ndarray | None = None,
@@ -84,6 +85,12 @@ def build_financial_metrics(
         pod = float(np.mean(finite_d < default_threshold_dscr))
 
     var_irr, cvar_irr = var_cvar_irr(ir)
+
+    capex_s = (
+        _finite_summary(np.asarray(total_capex, dtype=np.float64))
+        if total_capex is not None
+        else None
+    )
 
     e_sum = None
     var_e = cvar_e = None
@@ -122,6 +129,7 @@ def build_financial_metrics(
         probability_of_default_proxy_dscr_lt_1=pod,
         var_irr_95=var_irr,
         cvar_irr_95=cvar_irr,
+        total_capex=capex_s,
         ebitda=e_sum,
         var_ebitda_95=var_e,
         cvar_ebitda_95=cvar_e,

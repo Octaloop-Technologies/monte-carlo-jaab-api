@@ -35,6 +35,7 @@ class FinancialOutcomes:
     utility_opex: np.ndarray
     levered_cf: np.ndarray
     nav_proxy_equity: np.ndarray
+    total_capex: np.ndarray
     layer: LayerDiagnostics | None = None
     extensions: dict[str, Any] | None = None
     liquidity_runway_months: np.ndarray | None = None
@@ -205,6 +206,7 @@ def _financial_impact_2d(
         utility_opex=utility_opex,
         levered_cf=levered_cf,
         nav_proxy_equity=nav_proxy,
+        total_capex=capex_total,
         layer=layer,
         extensions=ext or None,
         liquidity_runway_months=runway,
@@ -328,6 +330,7 @@ def _financial_impact_path(
         utility_opex=np.zeros(n),
         levered_cf=levered_cf,
         nav_proxy_equity=nav_proxy,
+        total_capex=capex_total,
         layer=layer,
         extensions=ext,
         liquidity_runway_months=runway,

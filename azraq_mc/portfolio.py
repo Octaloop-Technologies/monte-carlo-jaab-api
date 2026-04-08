@@ -68,6 +68,7 @@ def run_portfolio_joint_simulation(
             out.dscr,
             out.irr,
             a.financing.covenant_dscr,
+            total_capex=out.total_capex,
             ebitda=out.ebitda,
             levered_cf=out.levered_cf,
             nav_proxy_equity=out.nav_proxy_equity,

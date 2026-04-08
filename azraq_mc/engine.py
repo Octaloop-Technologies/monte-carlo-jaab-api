@@ -83,6 +83,7 @@ def run_adhoc_asset_simulation(
         outcomes.dscr,
         outcomes.irr,
         asset.financing.covenant_dscr,
+        total_capex=outcomes.total_capex,
         ebitda=outcomes.ebitda,
         levered_cf=outcomes.levered_cf,
         nav_proxy_equity=outcomes.nav_proxy_equity,
