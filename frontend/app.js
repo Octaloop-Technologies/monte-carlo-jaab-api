@@ -150,7 +150,7 @@
     return comb > 1e-12 ? comb : 0.05;
   }
 
-  function buildShockpack(n, seed, useYahoo, yahooSymbol, yahooPeriod, yahooHistoryDays) {
+  function buildShockpack(n, seed, useYahoo, yahooSymbol, yahooPeriod) {
     const sp = {
       shockpack_id: "frontend-investor-v0",
       seed: Number(seed),
@@ -169,20 +169,17 @@
     if (useYahoo) {
       const symbol = (yahooSymbol || "").trim() || "HG=F";
       const period = (yahooPeriod || "1y").trim() || "1y";
-      const nd = yahooHistoryDays != null ? Number(yahooHistoryDays) : NaN;
-      const binding = {
-        symbol,
-        period,
-        target: "capex_log_sigma",
-        scale: 1.0,
-        annualization_factor: 252,
-        min_observations: 20,
-      };
-      if (Number.isFinite(nd) && nd >= 1) {
-        binding.history_days = Math.min(10000, Math.max(1, Math.floor(nd)));
-      }
       sp.dynamic_margins = {
-        yahoo_finance: [binding],
+        yahoo_finance: [
+          {
+            symbol,
+            period,
+            target: "capex_log_sigma",
+            scale: 1.0,
+            annualization_factor: 252,
+            min_observations: 20,
+          },
+        ],
       };
     }
     return sp;
@@ -490,14 +487,12 @@
     const yahoo = document.getElementById("yahooCopper").checked;
     const yahooSymbol = document.getElementById("yahooSymbol").value;
     const yahooPeriod = document.getElementById("yahooPeriod").value;
-    const yahooDaysEl = document.getElementById("yahooHistoryDays");
-    const yahooHistoryDaysRaw = yahooDaysEl && yahooDaysEl.value.trim() !== "" ? yahooDaysEl.value : null;
     const shocks = parseShockInputs();
 
     const baseAsset = buildAssetFromInvestorForm();
     syncJsonPreview(buildAssetWithShocks(baseAsset, shocks));
     const asset = buildAssetWithShocks(baseAsset, shocks);
-    const shockpack = buildShockpack(n, seed, yahoo, yahooSymbol, yahooPeriod, yahooHistoryDaysRaw);
+    const shockpack = buildShockpack(n, seed, yahoo, yahooSymbol, yahooPeriod);
 
     const hurdleDec = readNum("invHurdlePct", 8) / 100;
 
@@ -657,10 +652,8 @@
     if (panel) panel.classList.toggle("yahoo-panel--disabled", !on);
     const ys = document.getElementById("yahooSymbol");
     const yp = document.getElementById("yahooPeriod");
-    const yd = document.getElementById("yahooHistoryDays");
     if (ys) ys.disabled = !on;
     if (yp) yp.disabled = !on;
-    if (yd) yd.disabled = !on;
   }
 
   document.getElementById("yahooCopper").addEventListener("change", syncYahooPanel);

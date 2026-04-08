@@ -167,13 +167,19 @@
             </div>
             <div class="field field--compact">
               <label class="field-label" for="yahooPeriod">Period</label>
-              <input type="text" id="yahooPeriod" class="input-text" value="1y" disabled autocomplete="off" spellcheck="false" placeholder="e.g. 1y, 6mo, max" />
-              <p class="field-help field-help--tight">Yahoo preset token: <code>1d</code>, <code>5d</code>, <code>1mo</code>, <code>3mo</code>, <code>6mo</code>, <code>1y</code>, <code>2y</code>, <code>5y</code>, <code>10y</code>, <code>ytd</code>, <code>max</code>.</p>
-            </div>
-            <div class="field field--compact yahoo-field-span">
-              <label class="field-label" for="yahooHistoryDays">Last N calendar days</label>
-              <input type="number" id="yahooHistoryDays" class="input-text" min="5" max="10000" placeholder="e.g. 90" disabled />
-              <p class="field-help">Optional — overrides <strong>Period</strong> when set (API <code>history_days</code>; Yahoo window is approx. calendar days).</p>
+              <select id="yahooPeriod" class="input-text" disabled>
+                <option value="1d">1 day</option>
+                <option value="5d">5 days</option>
+                <option value="1mo">1 month</option>
+                <option value="3mo">3 months</option>
+                <option value="6mo">6 months</option>
+                <option value="1y" selected>1 year</option>
+                <option value="2y">2 years</option>
+                <option value="5y">5 years</option>
+                <option value="10y">10 years</option>
+                <option value="ytd">Year to date</option>
+                <option value="max">Max (available history)</option>
+              </select>
             </div>
           </div>
         </div>
