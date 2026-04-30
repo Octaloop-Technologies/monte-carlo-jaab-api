@@ -2,6 +2,7 @@
 
 Azraq Monte Carlo risk engine — single FastAPI app (`azraq_mc`).
 
+
 **Plain-language overview** (what it is, what’s built, how data sources fit in): **[docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)**.
 
 **Integration (one project, auth, reset, mapping checklist):** **[docs/INTEGRATION.md](docs/INTEGRATION.md)**.
