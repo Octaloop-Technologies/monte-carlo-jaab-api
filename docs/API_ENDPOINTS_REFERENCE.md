@@ -5,6 +5,8 @@ One section per route: **what it does**, **what you send**, **what you get**.
 **Base URL (local):** `http://127.0.0.1:8000`  
 **OpenAPI / Try it:** `http://127.0.0.1:8000/docs`
 
+**Full numbered list (21 routes) + `/docs`, `/openapi.json`, `/app`:** see **[ENDPOINTS.md](ENDPOINTS.md) § Complete route inventory** — this file uses the same **21** application endpoints in narrative tables below (not “13–14”; count the `## \` headings through WebSocket).
+
 ## Authentication and headers
 
 | Item | When |

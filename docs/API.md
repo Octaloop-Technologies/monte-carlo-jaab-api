@@ -3,6 +3,8 @@
 Base URL when running locally: `http://127.0.0.1:8000`  
 Interactive docs: `http://127.0.0.1:8000/docs`
 
+**Structured endpoint reference** (all routes, required parameters, request/response usage): **[ENDPOINTS.md](ENDPOINTS.md)**.
+
 Run from the repo root: `python -m uvicorn azraq_mc.api:app --reload --host 127.0.0.1 --port 8000`.
 
 ## Authentication and headers
@@ -324,6 +326,8 @@ Deterministic **single path** (no Monte Carlo). Request body = **`AssetAssumptio
 ---
 
 ### `POST /v1/simulate/asset`
+
+**Server flow (ASCII flowchart + plain-language walkthrough):** **[MONTE_CARLO_FLOW_AND_VALIDATION.md](MONTE_CARLO_FLOW_AND_VALIDATION.md)** — section **“2a. `POST /v1/simulate/asset` — full server flow”**.
 
 **Description:** Main **Monte Carlo** run for **one project** — draws many correlated shock paths and produces **distributions of DSCR, IRR, breach probability**, etc.
 

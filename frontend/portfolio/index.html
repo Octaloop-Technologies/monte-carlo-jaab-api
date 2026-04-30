@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Azraq Monte Carlo — Portfolio (v2)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <div class="page">
+    <nav class="app-nav" aria-label="Scenario lab views">
+      <span class="app-nav-label">Views</span>
+      <a href="../" class="app-nav-link">Single asset</a>
+      <a href="./" class="app-nav-link app-nav-link--active">Portfolio (v2 · joint MC)</a>
+    </nav>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <p class="brand-kicker">Risk engine · azraq-mc-v2-portfolio</p>
+            <h1 class="brand-title">Joint portfolio Monte Carlo</h1>
+          </div>
+        </div>
+        <p class="topbar-note"><code>POST /v1/simulate/portfolio</code> · same host as API</p>
+      </div>
+      <p class="lede">
+        <strong>Portfolio v2:</strong> multiple assets share one shock draw per scenario. Section 2: margins, optional Yahoo capex σ, correlation, copula.
+      </p>
+    </header>
+
+    <main class="main">
+      <section class="card card--accent">
+        <header class="card-header">
+          <span class="step">1</span>
+          <div>
+            <h2 class="card-title">Portfolio identity</h2>
+            <p class="card-sub">Labels stored in <code>PortfolioSimulationRequest</code> metadata.</p>
+          </div>
+        </header>
+        <div class="inv-grid inv-grid--3">
+          <div class="field field--compact">
+            <label class="field-label" for="pfId">Portfolio id</label>
+            <input type="text" id="pfId" class="input-text" value="demo-portfolio-01" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="pfAsId">Assumption set id</label>
+            <input type="text" id="pfAsId" class="input-text" value="2026Q1-consolidated" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="numAssets">Number of assets</label>
+            <select id="numAssets" class="input-text">
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+            <p class="field-help">Minimum 2 for joint simulation.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="card-header">
+          <span class="step">2</span>
+          <div>
+            <h2 class="card-title">Shared shock world: margins &amp; dependence</h2>
+            <p class="card-sub">One <code>shockpack</code> for all assets — log volatilities, <strong>factor correlation</strong> (4×4), and copula. Order: revenue, capex, opex, rate.</p>
+          </div>
+        </header>
+        <div class="inv-grid inv-grid--4">
+          <div class="field field--compact">
+            <label class="field-label" for="nScenarios">Simulations</label>
+            <input type="number" id="nScenarios" class="input-text" min="100" max="50000" value="2000" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="seed">Seed</label>
+            <input type="number" id="seed" class="input-text" value="42" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="sigmaRev">σ revenue (log)</label>
+            <input type="number" id="sigmaRev" class="input-text" step="0.005" value="0.08" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="sigmaCapex">σ capex (log)</label>
+            <input type="number" id="sigmaCapex" class="input-text" step="0.005" value="0.06" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="sigmaOpex">σ opex (log)</label>
+            <input type="number" id="sigmaOpex" class="input-text" step="0.005" value="0.05" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="sigmaRate">σ rate shock</label>
+            <input type="number" id="sigmaRate" class="input-text" step="0.001" value="0.005" />
+          </div>
+        </div>
+
+        <label class="chk">
+          <input type="checkbox" id="yahooCopper" />
+          <span class="chk-text">Calibrate <strong>Copper volatility</strong> from Yahoo closes (e.g. <code>HG=F</code>) — requires <code>yfinance</code> on the server; overrides <strong>σ capex (log)</strong> above for that margin.</span>
+        </label>
+        <div class="yahoo-panel yahoo-panel--disabled" id="yahooPanel" aria-labelledby="yahooHeading">
+          <p id="yahooHeading" class="yahoo-panel-title">Yahoo Finance</p>
+          <div class="yahoo-grid yahoo-grid--aligned">
+            <div class="field field--compact">
+              <label class="field-label" for="yahooSymbol">Symbol</label>
+              <input type="text" id="yahooSymbol" class="input-text" value="HG=F" disabled autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="field field--compact">
+              <label class="field-label" for="yahooPeriod">Period</label>
+              <select id="yahooPeriod" class="input-text" disabled>
+                <option value="1d">1 day</option>
+                <option value="5d">5 days</option>
+                <option value="1mo">1 month</option>
+                <option value="3mo">3 months</option>
+                <option value="6mo">6 months</option>
+                <option value="1y" selected>1 year</option>
+                <option value="2y">2 years</option>
+                <option value="5y">5 years</option>
+                <option value="10y">10 years</option>
+                <option value="ytd">Year to date</option>
+                <option value="max">Max (available history)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="inv-subheading">Factor correlation &amp; copula</h3>
+        <p class="corr-matrix-note">
+          Factor order: revenue, capex, opex, rate → 4×4 <code>correlation</code>.
+        </p>
+        <div class="field field--compact corr-preset-row">
+          <label class="field-label" for="corrPreset">Correlation preset</label>
+          <select id="corrPreset" class="input-text">
+            <option value="engine_default" selected>Engine default (moderate cross-factor)</option>
+            <option value="independent">Independent factors (identity)</option>
+            <option value="high_joint">High joint stress (stronger co-movement)</option>
+            <option value="custom">Custom (edit pairwise ρ below)</option>
+          </select>
+        </div>
+        <p class="corr-grid-labels">Pairwise correlations (ρ)</p>
+        <div class="corr-pairs-grid">
+          <div class="field field--compact">
+            <label class="field-label" for="corr_r_cx">Revenue–Capex</label>
+            <input type="number" id="corr_r_cx" class="input-text" step="0.01" min="-1" max="1" value="0.35" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="corr_r_op">Revenue–Opex</label>
+            <input type="number" id="corr_r_op" class="input-text" step="0.01" min="-1" max="1" value="0.25" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="corr_r_rt">Revenue–Rate</label>
+            <input type="number" id="corr_r_rt" class="input-text" step="0.01" min="-1" max="1" value="0.15" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="corr_cx_op">Capex–Opex</label>
+            <input type="number" id="corr_cx_op" class="input-text" step="0.01" min="-1" max="1" value="0.45" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="corr_cx_rt">Capex–Rate</label>
+            <input type="number" id="corr_cx_rt" class="input-text" step="0.01" min="-1" max="1" value="0.10" />
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="corr_op_rt">Opex–Rate</label>
+            <input type="number" id="corr_op_rt" class="input-text" step="0.01" min="-1" max="1" value="0.05" />
+          </div>
+        </div>
+        <div class="inv-grid inv-grid--4 corr-copula-row">
+          <div class="field field--compact field--span-2-md">
+            <label class="field-label" for="copulaKind">Copula</label>
+            <select id="copulaKind" class="input-text">
+              <option value="gaussian" selected>Gaussian (default)</option>
+              <option value="student_t">Student‑t (heavier joint tails)</option>
+            </select>
+          </div>
+          <div class="field field--compact">
+            <label class="field-label" for="copulaDf">Student‑t ν (df)</label>
+            <input type="number" id="copulaDf" class="input-text" step="0.5" min="2.1" value="8" />
+            <p class="field-help">If Student‑t.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="card-header">
+          <span class="step">3</span>
+          <div>
+            <h2 class="card-title">Assets</h2>
+            <p class="card-sub">Each block must have a <strong>unique</strong> case name. Debt defaults from equity % × capex if left blank.</p>
+          </div>
+        </header>
+        <div id="assetBlocks"></div>
+        <div class="run-footer inv-run-row">
+          <button type="button" id="runPfBtn" class="btn-primary">Run portfolio simulation</button>
+          <p id="pfStatus" class="run-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <details class="card">
+        <summary class="details-summary">Request JSON preview</summary>
+        <textarea id="reqJson" rows="14" spellcheck="false" class="ta-json" readonly></textarea>
+      </details>
+
+      <section class="card card--results" id="pfResults" hidden>
+        <header class="card-header">
+          <span class="step step--muted">4</span>
+          <h2 class="card-title">Portfolio results</h2>
+        </header>
+        <div class="kpi-row" id="pfKpiRow"></div>
+
+        <div class="results-panel results-panel--wide">
+          <h3 class="results-heading">By asset</h3>
+          <div class="table-wrap">
+            <table class="data" id="pfAssetTable"></table>
+          </div>
+        </div>
+
+        <div class="results-grid results-grid--hist">
+          <div class="results-panel">
+            <h3 class="results-heading">Min DSCR (across pool) — sketch</h3>
+            <div id="pfHistMinDscr" class="pseudo-hist-wrap"></div>
+          </div>
+          <div class="results-panel">
+            <h3 class="results-heading">Σ levered CF (Y1) — sketch</h3>
+            <div id="pfHistCf" class="pseudo-hist-wrap"></div>
+          </div>
+        </div>
+
+        <details class="raw-details">
+          <summary>Raw API JSON</summary>
+          <pre class="raw" id="pfRawOut"></pre>
+        </details>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>OpenAPI <a href="/docs">/docs</a> · <a href="../">Single-asset lab</a></p>
+    </footer>
+  </div>
+  <script src="../portfolio.js"></script>
+</body>
+</html>

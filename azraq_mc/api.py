@@ -8,6 +8,7 @@ from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, WebSocket
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -576,6 +577,16 @@ async def ws_simulate_portfolio(ws: WebSocket) -> None:
         await ws.send_json({"type": "error", "detail": str(e)})
     finally:
         await ws.close()
+
+
+@app.get("/app/portfolio", include_in_schema=False)
+def _redirect_app_portfolio_trailing_slash() -> RedirectResponse:
+    return RedirectResponse(url="/app/portfolio/", status_code=307)
+
+
+@app.get("/app/index.html", include_in_schema=False)
+def _redirect_app_index_html() -> RedirectResponse:
+    return RedirectResponse(url="/app/", status_code=307)
 
 
 _frontend_dir = _ROOT / "frontend"

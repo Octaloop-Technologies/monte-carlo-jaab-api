@@ -115,6 +115,109 @@ code {
   gap: 0.65rem 1rem;
 }
 
+/* App switcher — single-asset vs portfolio (v2) */
+.app-nav {
+  max-width: var(--content-max);
+  width: 100%;
+  margin: 0 auto 0.75rem;
+  padding: 0 var(--edge-pad);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+}
+
+.app-nav-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-right: 0.35rem;
+}
+
+.app-nav-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.app-nav-link:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.app-nav-link--active {
+  border-color: var(--accent-border);
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
+.portfolio-asset-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.portfolio-asset-block h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.portfolio-asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.65rem 1rem;
+}
+
+@media (min-width: 720px) {
+  .portfolio-asset-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Portfolio v2 — correlation UI */
+.corr-preset-row {
+  margin-bottom: 0.75rem;
+}
+
+.corr-grid-labels {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin: 0.5rem 0 0.35rem;
+}
+
+.corr-pairs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.6rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.corr-matrix-note {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+}
+
+.corr-copula-row {
+  margin-top: 0.75rem;
+}
+
 .brand {
   display: flex;
   align-items: center;
