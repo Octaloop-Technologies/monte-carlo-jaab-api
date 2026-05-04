@@ -76,9 +76,20 @@ PORTFOLIO_SIMULATION_RESULT = help_block(
         "Look at the weakest debt cover across assets to see the weakest link."
     ),
     glossary={
-        "metadata": "Portfolio name, list of assets, how many worlds were run.",
+        "metadata": "Portfolio name, list of assets, how many worlds were run, and the macro factor correlation matrix used for draws.",
         "per_asset": "Each site’s risk numbers, same style as a single-asset run.",
         "portfolio": "Whole-book numbers: joint breach risk, weakest link, totals.",
+        "cross_asset_dscr_correlation_pearson": (
+            "How strongly each asset’s debt cover moves with another’s **across scenarios** "
+            "(same random draw index)—not the factor correlation you typed into the shock pack."
+        ),
+        "cross_asset_equity_irr_correlation_pearson": (
+            "Same idea for equity IRR paths scenario-by-scenario."
+        ),
+        "factor_correlation": (
+            "Macro shock factors move together with these Pearson ρs (revenue, capex, opex, rate style axes)—"
+            "this is the input correlation matrix, not the asset correlation."
+        ),
     },
 )
 

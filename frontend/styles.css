@@ -1000,6 +1000,233 @@ code {
   color: #a5b4fc;
 }
 
+.results-caption {
+  margin: -0.35rem 0 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  max-width: 52rem;
+}
+
+.results-caption--tight {
+  margin-top: -0.6rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.74rem;
+  opacity: 0.95;
+}
+
+.results-caption code {
+  font-size: 0.88em;
+}
+
+.results-caption--warn {
+  border-left: 3px solid var(--warn);
+  padding-left: 0.65rem;
+  color: #e6edf3;
+}
+
+.corr-matrix-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.corr-matrix-grid--single {
+  grid-template-columns: 1fr;
+  max-width: 28rem;
+}
+
+.corr-divider {
+  margin: 1.35rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.corr-copula-note {
+  margin-top: -0.2rem;
+  margin-bottom: 0.65rem;
+}
+
+.pf-corr-panel {
+  margin-top: 0.35rem;
+}
+
+@media (min-width: 900px) {
+  .corr-matrix-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.corr-mx-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.data--corr-mx {
+  font-size: 0.8rem;
+}
+
+.data--corr-mx th,
+.data--corr-mx td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data--corr-mx th:first-child,
+.data--corr-mx td:first-child {
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.data--corr-mx td:first-child {
+  width: auto;
+  max-width: 10rem;
+}
+
+/* ——— Correlation heat maps (portfolio) ——— */
+.corr-heatmap-block {
+  margin-bottom: 0.85rem;
+}
+
+.corr-heatmap-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.corr-heatmap {
+  --corr-n: 4;
+  display: grid;
+  grid-template-columns: minmax(5.85rem, 1.08fr) repeat(var(--corr-n), minmax(2.95rem, 1fr));
+  gap: 4px;
+  padding: 0.2rem 0 0;
+  align-items: stretch;
+  min-width: min(100%, calc(6rem + var(--corr-n) * 2.95rem));
+}
+
+.corr-heatmap-corner {
+  min-height: 1.6rem;
+}
+
+.corr-heatmap-colhead,
+.corr-heatmap-rowhead {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  line-height: 1.25;
+}
+
+.corr-heatmap-colhead {
+  justify-content: center;
+  text-align: center;
+  padding: 0.2rem 0.15rem;
+}
+
+.corr-heatmap-rowhead {
+  justify-content: flex-end;
+  text-align: right;
+  padding: 0.15rem 0.35rem 0.15rem 0;
+}
+
+.corr-heatmap-cell {
+  border-radius: 7px;
+  min-height: 2.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.corr-heatmap-cell--na {
+  border-style: dashed;
+  opacity: 0.9;
+}
+
+.corr-heatmap-num {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: #f0f6fc;
+  text-shadow:
+    0 0 1px rgba(0, 0, 0, 0.9),
+    0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
+.corr-heatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.corr-leg-cap {
+  font-weight: 600;
+  color: #a5b4fc;
+}
+
+.corr-leg-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
+}
+
+.corr-leg-track > span:first-child,
+.corr-leg-track > span:last-child {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}
+
+.corr-leg-bar {
+  width: clamp(140px, 32vw, 240px);
+  height: 0.45rem;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    hsl(274, 62%, 40%) 0%,
+    #3d4554 50%,
+    hsl(158, 62%, 40%) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.corr-leg-caption {
+  flex-basis: 100%;
+  opacity: 0.92;
+}
+
+.corr-numeric-details {
+  margin-top: 0.65rem;
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.35rem;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: rgba(15, 17, 23, 0.35);
+}
+
+.corr-numeric-details > summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--accent);
+  padding: 0.2rem 0;
+}
+
+.corr-numeric-details[open] > summary {
+  margin-bottom: 0.45rem;
+}
+
 .results-panel {
   padding: 0.75rem 0.85rem;
   border-radius: var(--radius-sm);
@@ -1033,6 +1260,34 @@ code {
 .data td:first-child {
   color: var(--text-secondary);
   width: 48%;
+}
+
+/*
+ * Portfolio "By asset" table: many numeric columns — do not let the first cell
+ * consume half the table (base .data rule is for other single-wide-name layouts).
+ */
+#pfAssetTable.data th,
+#pfAssetTable.data td {
+  vertical-align: middle;
+}
+
+#pfAssetTable.data td:first-child {
+  width: auto;
+  max-width: 14rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+#pfAssetTable.data th:nth-child(n + 2),
+#pfAssetTable.data td:nth-child(n + 2) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#pfAssetTable.data th:first-child,
+#pfAssetTable.data td:first-child {
+  text-align: left;
 }
 
 .bar-chart {

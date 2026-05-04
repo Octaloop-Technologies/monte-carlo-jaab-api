@@ -663,6 +663,18 @@ class PortfolioRunMetadata(BaseModel):
     shockpack_catalog_entry_id: str | None = None
     compute_time_ms: float | None = None
     performance_profile: PerformanceProfile | None = None
+    factor_order: list[str] = Field(
+        default_factory=list,
+        description="Shock factors for macro correlation rows/columns (e.g. revenue, capex, opex, rate).",
+    )
+    factor_correlation: list[list[float]] = Field(
+        default_factory=list,
+        description="Symmetric Pearson ρ matrix used for joint macro factor draws; aligns with factor_order.",
+    )
+    copula: str | None = Field(
+        default=None,
+        description="Dependence wrapper for factors (e.g. gaussian, student_t).",
+    )
 
 
 class PerAssetMetrics(BaseModel):
@@ -697,6 +709,20 @@ class PortfolioMetrics(BaseModel):
         ge=0,
         le=1,
         description="E[∑ wᵢ · 1(breachᵢ)] — revenue-weighted simultaneous covenant stress",
+    )
+    cross_asset_dscr_correlation_pearson: list[list[float | None]] = Field(
+        default_factory=list,
+        description=(
+            "Symmetric Pearson ρ of scenario-by-scenario path DSCR between assets; "
+            "row/column order matches metadata.asset_ids (same shock index per row of the simulation)."
+        ),
+    )
+    cross_asset_equity_irr_correlation_pearson: list[list[float | None]] = Field(
+        default_factory=list,
+        description=(
+            "Symmetric Pearson ρ of scenario-by-scenario equity IRR between assets; "
+            "order matches metadata.asset_ids. None where undefined (e.g. flat series)."
+        ),
     )
 
 

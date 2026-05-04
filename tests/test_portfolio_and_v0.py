@@ -43,6 +43,13 @@ def test_portfolio_first_asset_matches_standalone():
     assert joint.portfolio.n_assets == 2
     assert 0.0 <= joint.portfolio.probability_any_covenant_breach <= 1.0
     assert "2" in joint.portfolio.probability_at_least_k_breaches
+    cd = joint.portfolio.cross_asset_dscr_correlation_pearson
+    assert len(cd) == 2 and len(cd[0]) == 2
+    assert cd[0][0] == 1.0 and cd[1][1] == 1.0
+    assert cd[0][1] == cd[1][0]
+    assert joint.metadata.factor_order and len(joint.metadata.factor_order) == 4
+    assert len(joint.metadata.factor_correlation) == 4
+    assert joint.metadata.copula
 
 
 def test_v0_base_npv():

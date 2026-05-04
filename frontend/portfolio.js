@@ -150,6 +150,154 @@
     }
   }
 
+  function randInt(lo, hiInclusive) {
+    return lo + Math.floor(Math.random() * (hiInclusive - lo + 1));
+  }
+
+  function randFloat(lo, hi) {
+    return lo + Math.random() * (hi - lo);
+  }
+
+  /**
+   * Fill the form with reproducible-random economics and shock settings (still need Run).
+   * Correlation heat-maps and KPIs change meaningfully because σ, ρ, copula, counts, and balance sheets move.
+   */
+  function randomizePortfolioInputs() {
+    const pfIde = document.getElementById("pfId");
+    const pfAse = document.getElementById("pfAsId");
+    if (pfIde) pfIde.value = "random-pool-" + randInt(100, 999999);
+    if (pfAse) pfAse.value = "asof-rnd-" + randInt(100, 999999);
+
+    const set = (id, v) => {
+      const el = document.getElementById(id);
+      if (el) el.value = String(v);
+    };
+
+    set("nScenarios", randInt(900, 4900));
+    set("seed", randInt(1, 2_000_000_000));
+
+    set("sigmaRev", randFloat(0.045, 0.14).toFixed(3));
+    set("sigmaCapex", randFloat(0.035, 0.11).toFixed(3));
+    set("sigmaOpex", randFloat(0.035, 0.1).toFixed(3));
+    set("sigmaRate", randFloat(0.0015, 0.012).toFixed(4));
+
+    const copEl = document.getElementById("copulaKind");
+    if (copEl) copEl.value = Math.random() < 0.42 ? "student_t" : "gaussian";
+    set("copulaDf", randFloat(3.5, 18).toFixed(1));
+
+    const flip = Math.random();
+    if (flip < 0.22) applyCorrPreset("independent");
+    else if (flip < 0.45) applyCorrPreset("engine_default");
+    else if (flip < 0.68) applyCorrPreset("high_joint");
+    else {
+      const sel = document.getElementById("corrPreset");
+      if (sel) sel.value = "custom";
+      for (const cid of CORR_PAIR_IDS) {
+        const el = document.getElementById(cid);
+        if (el) el.value = clampCorr(randFloat(-0.55, 0.88)).toFixed(2);
+      }
+    }
+
+    const ycb = document.getElementById("yahooCopper");
+    if (ycb) {
+      ycb.checked = false;
+      ycb.dispatchEvent(new Event("change"));
+    }
+
+    const nAssets = randInt(2, 4);
+    const numSel = document.getElementById("numAssets");
+    if (numSel) numSel.value = String(nAssets);
+    renderAssetBlocks();
+
+    for (let slot = 1; slot <= nAssets; slot++) {
+      const rev = randFloat(22e6, 55e6);
+      const maxOpex = rev * 0.46;
+      let opex = randFloat(5e6, Math.max(6e6, maxOpex));
+      opex = Math.min(opex, maxOpex);
+      const capex = randFloat(92e6, 310e6);
+      const eqPct = randInt(24, 54);
+      const coupon = randFloat(5.35, 8.25);
+      const term = randInt(11, 21);
+      const cov = randFloat(1.12, 1.42);
+      const hz = randInt(11, 21);
+      const util =
+        Math.random() < 0.35 ? randFloat(0, Math.min(opex * 0.15, 3.5e6)) : 0;
+
+      const aid = document.getElementById("a" + slot + "_id");
+      if (aid) aid.value = "asset-" + slot + "-" + randInt(100, 99999);
+
+      set("a" + slot + "_rev", Math.round(rev));
+      set("a" + slot + "_opex", Math.round(opex));
+      set("a" + slot + "_capex", Math.round(capex));
+      set("a" + slot + "_eq", eqPct);
+      set("a" + slot + "_debt", "");
+      set("a" + slot + "_coupon", coupon.toFixed(2));
+      set("a" + slot + "_term", term);
+      set("a" + slot + "_cov", cov.toFixed(2));
+      set("a" + slot + "_hz", hz);
+      set("a" + slot + "_util", Math.round(util));
+    }
+
+    trySyncRequestPreview();
+  }
+
+  /** Defaults on load: 3 named renewables-style assets, stronger macro ρ preset, vols — yields rich correlation tables after Run. */
+  function trySyncRequestPreview() {
+    try {
+      const n = parseInt(document.getElementById("numAssets").value, 10) || 2;
+      const assets = collectAssets(n);
+      const shockpack = buildShockpack();
+      syncRequestPreview({
+        portfolio_id: (document.getElementById("pfId").value || "portfolio").trim(),
+        portfolio_assumption_set_id: (document.getElementById("pfAsId").value || "asof").trim(),
+        assets,
+        shockpack,
+      });
+    } catch (e) {
+      const ta = document.getElementById("reqJson");
+      if (ta) ta.value = "// Request preview: " + e.message;
+    }
+  }
+
+  function applySamplePortfolioPrefill() {
+    const pfId = document.getElementById("pfId");
+    const pfAs = document.getElementById("pfAsId");
+    if (pfId) pfId.value = "sample-renewables-pool";
+    if (pfAs) pfAs.value = "demo-2026-correlation";
+
+    const numSel = document.getElementById("numAssets");
+    if (numSel) numSel.value = "3";
+
+    const set = (id, v) => {
+      const el = document.getElementById(id);
+      if (el) el.value = String(v);
+    };
+    set("nScenarios", "2500");
+    set("seed", "11");
+    set("sigmaRev", "0.09");
+    set("sigmaCapex", "0.065");
+    set("sigmaOpex", "0.055");
+    set("sigmaRate", "0.006");
+
+    const cop = document.getElementById("copulaKind");
+    if (cop) cop.value = "gaussian";
+    set("copulaDf", "8");
+
+    const preset = document.getElementById("corrPreset");
+    if (preset) preset.value = "high_joint";
+
+    renderAssetBlocks();
+    applyCorrPreset("high_joint");
+
+    const ycb = document.getElementById("yahooCopper");
+    if (ycb) {
+      ycb.checked = false;
+      ycb.dispatchEvent(new Event("change"));
+    }
+
+    trySyncRequestPreview();
+  }
+
   function buildShockpack() {
     const n = Math.floor(readNum("nScenarios", 2000));
     const seed = Math.floor(readNum("seed", 42));
@@ -407,6 +555,228 @@
       '</div><p class="chart-caption chart-caption--tight">Sketch from reported quantiles (not raw buckets).</p>';
   }
 
+  const FACTOR_DISPLAY = {
+    revenue: "Revenue / FX",
+    capex: "Capex / materials",
+    opex: "Opex / energy · CPI",
+    rate: "Interest rate",
+  };
+
+  function factorRowLabel(id) {
+    return FACTOR_DISPLAY[id] || id;
+  }
+
+  function corrHeatBackground(r) {
+    if (r == null || Number.isNaN(Number(r))) return "#353b43";
+    const x = Math.max(-1, Math.min(1, Number(r)));
+    const amp = Math.abs(x);
+    if (amp < 0.03) return "#3d4554";
+    if (x > 0) return `hsl(158, ${46 + amp * 38}%, ${24 + amp * 22}%)`;
+    return `hsl(274, ${40 + amp * 45}%, ${24 + amp * 18}%)`;
+  }
+
+  function abbrevLabel(lbl, maxLen) {
+    const s = String(lbl || "");
+    if (s.length <= maxLen) return s;
+    return s.slice(0, Math.max(0, maxLen - 1)) + "…";
+  }
+
+  function isSquareCorrelationMatrix(labels, mat) {
+    const n = labels.length;
+    if (!mat || mat.length !== n) return false;
+    return mat.every((row) => row && row.length === n);
+  }
+
+  function buildCorrelationDataTable(labels, mat) {
+    if (!isSquareCorrelationMatrix(labels, mat)) return "";
+    let h =
+      '<table class="data data--corr-mx"><thead><tr><th></th>';
+    for (const id of labels) {
+      h += '<th scope="col">' + escapeAttr(id) + "</th>";
+    }
+    h += "</tr></thead><tbody>";
+    for (let i = 0; i < mat.length; i++) {
+      h += '<tr><th scope="row">' + escapeAttr(labels[i] || "") + "</th>";
+      const row = mat[i] || [];
+      for (let j = 0; j < row.length; j++) {
+        const v = row[j];
+        h += "<td>" + (v == null || Number.isNaN(v) ? "—" : fmtNum(v, 3)) + "</td>";
+      }
+      h += "</tr>";
+    }
+    h += "</tbody></table>";
+    return h;
+  }
+
+  /**
+   * Color heat-map of ρ plus optional collapsible numeric table (no canvas).
+   */
+  function buildCorrelationHeatmapBlock(title, labels, mat, numericSummaryLabel) {
+    if (!isSquareCorrelationMatrix(labels, mat)) return "";
+    const n = labels.length;
+
+    let h =
+      '<div class="corr-heatmap-block">' +
+      '<h4 class="corr-mx-title">' +
+      escapeAttr(title) +
+      "</h4>" +
+      '<div class="corr-heatmap-scroll">' +
+      '<div class="corr-heatmap" style="--corr-n:' +
+      n +
+      '" role="grid" aria-label="' +
+      escapeAttr(title) +
+      '">';
+    h += '<div class="corr-heatmap-corner" aria-hidden="true"></div>';
+    for (let j = 0; j < n; j++) {
+      const lbl = labels[j];
+      h +=
+        '<div class="corr-heatmap-colhead" role="columnheader" title="' +
+        escapeAttr(lbl) +
+        '">' +
+        escapeAttr(abbrevLabel(lbl, 12)) +
+        "</div>";
+    }
+    for (let i = 0; i < n; i++) {
+      const ri = labels[i];
+      h +=
+        '<div class="corr-heatmap-rowhead" role="rowheader" title="' +
+        escapeAttr(ri) +
+        '">' +
+        escapeAttr(abbrevLabel(ri, 14)) +
+        "</div>";
+      const row = mat[i] || [];
+      for (let j = 0; j < n; j++) {
+        const v = row[j];
+        const num = v == null || Number.isNaN(Number(v)) ? null : Number(v);
+        const txt = num == null ? "—" : fmtNum(num, 3);
+        const bg = corrHeatBackground(num);
+        const cellCls =
+          num == null ? "corr-heatmap-cell corr-heatmap-cell--na" : "corr-heatmap-cell";
+        const tip =
+          num == null ? "missing" : "Pearson correlation ρ = " + txt;
+        h +=
+          '<div class="' +
+          cellCls +
+          '" role="gridcell" title="' +
+          escapeAttr(tip) +
+          '" style="background-color:' +
+          bg +
+          '"><span class="corr-heatmap-num">' +
+          txt +
+          "</span></div>";
+      }
+    }
+    h +=
+      "</div></div>" +
+      '<p class="corr-heatmap-legend"><span class="corr-leg-cap">Pearson ρ</span>' +
+      '<span class="corr-leg-track"><span>-1</span><span class="corr-leg-bar" role="presentation"></span><span>+1</span></span>' +
+      '<span class="corr-leg-caption">Tone: violet = negative linkage · muted = ~0 · teal = positive</span></p>';
+
+    const tbl = buildCorrelationDataTable(labels, mat);
+    if (tbl) {
+      const sumLabel = numericSummaryLabel || "Numeric ρ table";
+      h +=
+        '<details class="corr-numeric-details"><summary>' +
+        escapeAttr(sumLabel) +
+        '</summary><div class="table-wrap">' +
+        tbl +
+        "</div></details>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  function getOrCreateCorrPanel() {
+    let wrap = document.getElementById("pfCorrPanel");
+    if (wrap) return wrap;
+    const assetPanel = document.getElementById("pfAssetTable")?.closest(".results-panel");
+    if (!assetPanel || !assetPanel.parentNode) return null;
+    wrap = document.createElement("div");
+    wrap.id = "pfCorrPanel";
+    wrap.className = "results-panel results-panel--wide pf-corr-panel";
+    wrap.setAttribute("aria-live", "polite");
+    assetPanel.parentNode.insertBefore(wrap, assetPanel.nextSibling);
+    return wrap;
+  }
+
+  function renderCorrelationSection(portfolio, meta) {
+    const wrap = getOrCreateCorrPanel();
+    if (!wrap) return;
+
+    const fo = (meta && meta.factor_order) || [];
+    const fc = (meta && meta.factor_correlation) || [];
+    const hasMacro =
+      fc.length > 0 &&
+      fo.length === fc.length &&
+      fc.every((row) => row && row.length === fo.length);
+
+    const chunks = [];
+
+    if (hasMacro) {
+      const labels = fo.map(factorRowLabel);
+      const cop =
+        meta && meta.copula
+          ? '<p class="results-caption corr-copula-note">Copula: <code>' +
+            escapeAttr(String(meta.copula)) +
+            "</code></p>"
+          : "";
+      chunks.push(
+        '<h3 class="results-heading">Macro drivers — factor correlation (input)</h3>' +
+          '<p class="results-caption">' +
+          "Pearson ρ between <strong>joint shock draws</strong> for the drivers in your shock pack (section 2). " +
+          "<strong>Tile colour</strong> encodes ρ; hover a cell or open the numeric table.</p>" +
+          cop +
+          '<div class="corr-matrix-grid corr-matrix-grid--single">' +
+          buildCorrelationHeatmapBlock("Macro factors × factors", labels, fc, "Numeric ρ (macro)") +
+          "</div>"
+      );
+    } else {
+      chunks.push(
+        '<h3 class="results-heading">Macro drivers — factor correlation</h3>' +
+          '<p class="results-caption results-caption--warn">' +
+          "No <code>metadata.factor_correlation</code> in this response — restart the API from the latest code, or inspect Raw JSON.</p>"
+      );
+    }
+
+    const assetIds = (meta && meta.asset_ids) || [];
+    const d = portfolio && portfolio.cross_asset_dscr_correlation_pearson;
+    const ir = portfolio && portfolio.cross_asset_equity_irr_correlation_pearson;
+
+    if (isSquareCorrelationMatrix(assetIds, d)) {
+      chunks.push(
+        '<hr class="corr-divider" />' +
+          '<h3 class="results-heading">Cross-asset — outcome correlation (output)</h3>' +
+          '<p class="results-caption">' +
+          "Pearson ρ of path <strong>DSCR</strong> and path <strong>IRR</strong> between sites — same Monte Carlo row = same macro world. Colour = strength of co-movement.</p>" +
+          '<p class="results-caption results-caption--tight">' +
+          "Why wind–solar ρ can match a <strong>2-asset</strong> run: each pair uses only those two scenario paths; adding storage does not reshock wind or solar (same <code>Z</code>, independent asset models). Portfolio-wide tiles (any breach, min DSCR pool) <em>do</em> change with more names.</p>" +
+          '<div class="corr-matrix-grid">' +
+          buildCorrelationHeatmapBlock("DSCR × DSCR", assetIds, d, "Numeric ρ — DSCR") +
+          (isSquareCorrelationMatrix(assetIds, ir)
+            ? buildCorrelationHeatmapBlock("IRR × IRR", assetIds, ir, "Numeric ρ — IRR")
+            : "") +
+          "</div>"
+      );
+    } else if (!d || !d.length) {
+      chunks.push(
+        '<hr class="corr-divider" />' +
+          '<h3 class="results-heading">Cross-asset — outcome correlation</h3>' +
+          '<p class="results-caption results-caption--warn">' +
+          "No <code>portfolio.cross_asset_dscr_correlation_pearson</code> in this response — restart API from latest code.</p>"
+      );
+    } else {
+      chunks.push(
+        '<hr class="corr-divider" />' +
+          '<h3 class="results-heading">Cross-asset — outcome correlation</h3>' +
+          '<p class="results-caption results-caption--warn">' +
+          "Correlation matrix shape does not match <code>asset_ids</code>; check Raw JSON.</p>"
+      );
+    }
+    wrap.hidden = false;
+    wrap.style.removeProperty("display");
+    wrap.innerHTML = chunks.join("");
+  }
+
   function renderPortfolioKpis(portfolio, meta) {
     const row = document.getElementById("pfKpiRow");
     if (!row || !portfolio) return;
@@ -456,9 +826,13 @@
     const tbl = document.getElementById("pfAssetTable");
     if (!tbl || !Array.isArray(perAsset)) return;
 
+    const sorted = [...perAsset].sort((a, b) =>
+      String(a.asset_id || "").localeCompare(String(b.asset_id || ""), undefined, { sensitivity: "base" })
+    );
+
     const head =
-      "<thead><tr><th>Asset</th><th>P(breach)</th><th>DSCR p50</th><th>IRR p50</th><th>PD proxy</th></tr></thead><tbody>";
-    const body = perAsset
+      "<thead><tr><th scope=\"col\">Asset</th><th scope=\"col\">P(breach)</th><th scope=\"col\">DSCR p50</th><th scope=\"col\">IRR p50</th><th scope=\"col\">PD proxy</th></tr></thead><tbody>";
+    const body = sorted
       .map((row) => {
         const m = row.metrics || {};
         const dscr = m.dscr || {};
@@ -491,6 +865,7 @@
     const meta = data.metadata;
     renderPortfolioKpis(portfolio, meta);
     renderAssetTable(data.per_asset);
+    renderCorrelationSection(portfolio, meta);
 
     const minD = portfolio.min_dscr_across_assets;
     renderPseudoHistogram(
@@ -569,10 +944,13 @@
   function bind() {
     const num = document.getElementById("numAssets");
     if (num) {
-      num.addEventListener("change", renderAssetBlocks);
+      num.addEventListener("change", () => {
+        renderAssetBlocks();
+        trySyncRequestPreview();
+      });
     }
     bindCorrelationControls();
-    applyCorrPreset("engine_default");
+    applySamplePortfolioPrefill();
 
     function syncYahooPanel() {
       const cb = document.getElementById("yahooCopper");
@@ -590,6 +968,18 @@
       syncYahooPanel();
     }
 
+    const rnd = document.getElementById("randomizePfBtn");
+    if (rnd) {
+      rnd.addEventListener("click", () => {
+        const status = document.getElementById("pfStatus");
+        randomizePortfolioInputs();
+        if (status) {
+          status.textContent = "Random inputs applied — click Run portfolio simulation.";
+          status.classList.remove("err");
+        }
+      });
+    }
+
     const btn = document.getElementById("runPfBtn");
     if (btn) {
       btn.addEventListener("click", async () => {
@@ -602,7 +992,6 @@
         }
       });
     }
-    renderAssetBlocks();
   }
 
   if (document.readyState === "loading") {

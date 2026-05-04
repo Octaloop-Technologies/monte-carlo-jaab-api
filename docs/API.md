@@ -476,9 +476,9 @@ Joint Monte Carlo over **≥ 2 assets**. Body: **`PortfolioSimulationRequest`**.
 
 **Response** (200): `PortfolioSimulationResult`
 
-- `metadata` — `PortfolioRunMetadata` (`portfolio_id`, `asset_ids`, seed, `n_scenarios`, …)
+- `metadata` — `PortfolioRunMetadata` (`portfolio_id`, `asset_ids`, seed, `n_scenarios`, **`factor_order`**, **`factor_correlation`**, **`copula`**, …)
 - `per_asset` — list of `{ asset_id, assumption_set_id, metrics: FinancialRiskMetrics }`
-- `portfolio` — `PortfolioMetrics`: e.g. `probability_any_covenant_breach`, `min_dscr_across_assets`, concentration / weighted breach fields, summed cashflow tails.
+- `portfolio` — `PortfolioMetrics`: e.g. `probability_any_covenant_breach`, `min_dscr_across_assets`, concentration / weighted breach fields, summed cashflow tails, plus **cross-asset Pearson matrices** `cross_asset_dscr_correlation_pearson` and `cross_asset_equity_irr_correlation_pearson` (order = `metadata.asset_ids`) — scenario-by-scenario co-movement of path DSCR and path equity IRR, **not** the 4×4 factor `correlation` in the shock pack.
 
 **Example request:**
 

@@ -24,6 +24,43 @@ from azraq_mc.schemas import (
 from azraq_mc.versioning import layer_versions_bundle
 
 
+def _pairwise_pearson_columns(X: np.ndarray) -> np.ndarray:
+    """Pearson correlation between columns of X (n_samples × n_assets). Diagonal = 1."""
+    _, n = X.shape
+    out = np.eye(n, dtype=np.float64)
+    for i in range(n):
+        for j in range(i + 1, n):
+            xi = X[:, i]
+            xj = X[:, j]
+            mask = np.isfinite(xi) & np.isfinite(xj)
+            if mask.sum() < 3:
+                r = np.nan
+            else:
+                a = xi[mask]
+                b = xj[mask]
+                if np.std(a) < 1e-14 or np.std(b) < 1e-14:
+                    r = np.nan
+                else:
+                    r = float(np.corrcoef(a, b)[0, 1])
+            out[i, j] = out[j, i] = r
+    return out
+
+
+def _corr_matrix_jsonable(M: np.ndarray) -> list[list[float | None]]:
+    """JSON-safe symmetric matrix: NaN -> None, ~round for stability."""
+    rows: list[list[float | None]] = []
+    for i in range(M.shape[0]):
+        row: list[float | None] = []
+        for j in range(M.shape[1]):
+            x = M[i, j]
+            if not np.isfinite(x):
+                row.append(None)
+            else:
+                row.append(float(round(x, 6)))
+        rows.append(row)
+    return rows
+
+
 def run_portfolio_joint_simulation(
     shock_spec: ShockPackSpec,
     portfolio_id: str,
@@ -53,6 +90,7 @@ def run_portfolio_joint_simulation(
     shocks = get_or_build_shock_array(shock_spec)
     n = shock_spec.n_scenarios
     dscr_cols: list[np.ndarray] = []
+    irr_cols: list[np.ndarray] = []
     breach_cols: list[np.ndarray] = []
     cf_sum = np.zeros(n, dtype=np.float64)
     per_asset: list[PerAssetMetrics] = []
@@ -80,6 +118,7 @@ def run_portfolio_joint_simulation(
             PerAssetMetrics(asset_id=a.asset_id, assumption_set_id=a.assumption_set_id, metrics=metrics)
         )
         dscr_cols.append(np.where(np.isfinite(out.dscr), out.dscr, np.nan))
+        irr_cols.append(np.where(np.isfinite(out.irr), out.irr, np.nan))
         breach_cols.append((np.isfinite(out.dscr) & (out.dscr < a.financing.covenant_dscr)).astype(np.float64))
         cf_sum += out.levered_cf
         if progress is not None:
@@ -99,6 +138,10 @@ def run_portfolio_joint_simulation(
     tail_cf = cf_sum[cf_sum <= p05_cf]
     cvar_cf = float(np.mean(tail_cf)) if tail_cf.size else None
 
+    irr_stack = np.column_stack(irr_cols)
+    corr_dscr = _corr_matrix_jsonable(_pairwise_pearson_columns(dscr_stack))
+    corr_irr = _corr_matrix_jsonable(_pairwise_pearson_columns(irr_stack))
+
     portfolio = PortfolioMetrics(
         n_assets=len(assets),
         scenarios=n,
@@ -110,6 +153,8 @@ def run_portfolio_joint_simulation(
         cvar_sum_levered_cf_p05=cvar_cf,
         revenue_herfindahl=hhi,
         weighted_covenant_breach_exposure=wbreach,
+        cross_asset_dscr_correlation_pearson=corr_dscr,
+        cross_asset_equity_irr_correlation_pearson=corr_irr,
     )
 
     meta = PortfolioRunMetadata(
@@ -130,5 +175,8 @@ def run_portfolio_joint_simulation(
         shockpack_catalog_entry_id=shockpack_catalog_entry_id,
         compute_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
         performance_profile=performance_profile,
+        factor_order=list(shock_spec.factor_order),
+        factor_correlation=shock_spec.correlation,
+        copula=str(shock_spec.copula),
     )
     return PortfolioSimulationResult(metadata=meta, per_asset=per_asset, portfolio=portfolio)

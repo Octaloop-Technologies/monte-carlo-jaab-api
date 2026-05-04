@@ -29,7 +29,7 @@
         <p class="topbar-note"><code>POST /v1/simulate/portfolio</code> · same host as API</p>
       </div>
       <p class="lede">
-        <strong>Portfolio v2:</strong> multiple assets share one shock draw per scenario. Section 2: margins, optional Yahoo capex σ, correlation, copula.
+        <strong>Portfolio v2:</strong> multiple assets share one shock draw per scenario. The page loads a <strong>sample 3-asset</strong> renewables pool with <strong>high joint macro correlation</strong> so factor and cross-asset ρ tables are meaningful — open <em>Request JSON preview</em> then click <em>Run portfolio simulation</em>.
       </p>
     </header>
 
@@ -45,20 +45,20 @@
         <div class="inv-grid inv-grid--3">
           <div class="field field--compact">
             <label class="field-label" for="pfId">Portfolio id</label>
-            <input type="text" id="pfId" class="input-text" value="demo-portfolio-01" />
+            <input type="text" id="pfId" class="input-text" value="sample-renewables-pool" />
           </div>
           <div class="field field--compact">
             <label class="field-label" for="pfAsId">Assumption set id</label>
-            <input type="text" id="pfAsId" class="input-text" value="2026Q1-consolidated" />
+            <input type="text" id="pfAsId" class="input-text" value="demo-2026-correlation" />
           </div>
           <div class="field field--compact">
             <label class="field-label" for="numAssets">Number of assets</label>
             <select id="numAssets" class="input-text">
-              <option value="2" selected>2</option>
-              <option value="3">3</option>
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
               <option value="4">4</option>
             </select>
-            <p class="field-help">Minimum 2 for joint simulation.</p>
+            <p class="field-help">Loads a <strong>3-asset</strong> sample for joint MC. After <em>Run</em>, scroll below the <strong>By asset</strong> table for <strong>macro factor</strong> and <strong>cross-asset</strong> ρ (or API upgrade warnings).</p>
           </div>
         </div>
       </section>
@@ -74,27 +74,27 @@
         <div class="inv-grid inv-grid--4">
           <div class="field field--compact">
             <label class="field-label" for="nScenarios">Simulations</label>
-            <input type="number" id="nScenarios" class="input-text" min="100" max="50000" value="2000" />
+            <input type="number" id="nScenarios" class="input-text" min="100" max="50000" value="2500" />
           </div>
           <div class="field field--compact">
             <label class="field-label" for="seed">Seed</label>
-            <input type="number" id="seed" class="input-text" value="42" />
+            <input type="number" id="seed" class="input-text" value="11" />
           </div>
           <div class="field field--compact">
             <label class="field-label" for="sigmaRev">σ revenue (log)</label>
-            <input type="number" id="sigmaRev" class="input-text" step="0.005" value="0.08" />
+            <input type="number" id="sigmaRev" class="input-text" step="0.005" value="0.09" />
           </div>
           <div class="field field--compact">
             <label class="field-label" for="sigmaCapex">σ capex (log)</label>
-            <input type="number" id="sigmaCapex" class="input-text" step="0.005" value="0.06" />
+            <input type="number" id="sigmaCapex" class="input-text" step="0.005" value="0.065" />
           </div>
           <div class="field field--compact">
             <label class="field-label" for="sigmaOpex">σ opex (log)</label>
-            <input type="number" id="sigmaOpex" class="input-text" step="0.005" value="0.05" />
+            <input type="number" id="sigmaOpex" class="input-text" step="0.005" value="0.055" />
           </div>
           <div class="field field--compact">
             <label class="field-label" for="sigmaRate">σ rate shock</label>
-            <input type="number" id="sigmaRate" class="input-text" step="0.001" value="0.005" />
+            <input type="number" id="sigmaRate" class="input-text" step="0.001" value="0.006" />
           </div>
         </div>
 
@@ -135,9 +135,9 @@
         <div class="field field--compact corr-preset-row">
           <label class="field-label" for="corrPreset">Correlation preset</label>
           <select id="corrPreset" class="input-text">
-            <option value="engine_default" selected>Engine default (moderate cross-factor)</option>
+            <option value="engine_default">Engine default (moderate cross-factor)</option>
             <option value="independent">Independent factors (identity)</option>
-            <option value="high_joint">High joint stress (stronger co-movement)</option>
+            <option value="high_joint" selected>High joint stress (stronger co-movement) — sample default</option>
             <option value="custom">Custom (edit pairwise ρ below)</option>
           </select>
         </div>
@@ -189,11 +189,14 @@
           <span class="step">3</span>
           <div>
             <h2 class="card-title">Assets</h2>
-            <p class="card-sub">Each block must have a <strong>unique</strong> case name. Debt defaults from equity % × capex if left blank.</p>
+            <p class="card-sub">Each block must have a <strong>unique</strong> case name. Debt defaults from equity % × capex if left blank. Use <strong>Random inputs</strong> to explore different heat-maps (then Run).</p>
           </div>
         </header>
         <div id="assetBlocks"></div>
         <div class="run-footer inv-run-row">
+          <button type="button" id="randomizePfBtn" class="btn-secondary">
+            Random inputs
+          </button>
           <button type="button" id="runPfBtn" class="btn-primary">Run portfolio simulation</button>
           <p id="pfStatus" class="run-status" role="status" aria-live="polite"></p>
         </div>
@@ -213,10 +216,16 @@
 
         <div class="results-panel results-panel--wide">
           <h3 class="results-heading">By asset</h3>
+          <p class="results-caption">
+            Each row is one asset’s <code>FinancialRiskMetrics</code> from <code>per_asset[]</code> (same shared shocks as the pool).
+            KPI tiles above are <strong>portfolio-wide</strong>. <strong>Correlation:</strong> macro-factor and cross-asset ρ tables are in the <strong>next panel below</strong> (scroll down if needed).
+          </p>
           <div class="table-wrap">
             <table class="data" id="pfAssetTable"></table>
           </div>
         </div>
+
+        <div class="results-panel results-panel--wide pf-corr-panel" id="pfCorrPanel" hidden aria-live="polite"></div>
 
         <div class="results-grid results-grid--hist">
           <div class="results-panel">
