@@ -42,6 +42,10 @@ def test_portfolio_first_asset_matches_standalone():
     assert joint.per_asset[0].metrics.dscr.p50 == solo.metrics.dscr.p50
     assert joint.portfolio.n_assets == 2
     assert 0.0 <= joint.portfolio.probability_any_covenant_breach <= 1.0
+    mn_m = joint.portfolio.min_dscr_across_assets.mean
+    mx_m = joint.portfolio.max_dscr_across_assets.mean
+    bl_m = joint.portfolio.revenue_weighted_mean_dscr_across_assets.mean
+    assert mn_m <= bl_m + 1e-9 <= mx_m + 2e-9
     assert "2" in joint.portfolio.probability_at_least_k_breaches
     cd = joint.portfolio.cross_asset_dscr_correlation_pearson
     assert len(cd) == 2 and len(cd[0]) == 2

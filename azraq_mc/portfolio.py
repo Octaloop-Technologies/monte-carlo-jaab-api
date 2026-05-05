@@ -46,6 +46,18 @@ def _pairwise_pearson_columns(X: np.ndarray) -> np.ndarray:
     return out
 
 
+def _row_weighted_mean(X: np.ndarray, w: np.ndarray) -> np.ndarray:
+    """Per Monte Carlo row: Σᵢ xᵢ wᵢ / Σᵢ wᵢ over finite xᵢ only (same w as HHI / weighted breach)."""
+    X = np.asarray(X, dtype=np.float64)
+    w = np.asarray(w, dtype=np.float64).reshape(1, -1)
+    ok = np.isfinite(X)
+    w_eff = np.where(ok, w, 0.0)
+    den = np.sum(w_eff, axis=1)
+    num = np.sum(np.where(ok, X * w, 0.0), axis=1)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(den > 1e-15, num / den, np.nan)
+
+
 def _corr_matrix_jsonable(M: np.ndarray) -> list[list[float | None]]:
     """JSON-safe symmetric matrix: NaN -> None, ~round for stability."""
     rows: list[list[float | None]] = []
@@ -126,6 +138,12 @@ def run_portfolio_joint_simulation(
 
     dscr_stack = np.column_stack(dscr_cols)
     min_dscr = np.nanmin(dscr_stack, axis=1)
+    max_dscr = np.nanmax(dscr_stack, axis=1)
+    blend_dscr = _row_weighted_mean(dscr_stack, w)
+
+    irr_stack = np.column_stack(irr_cols)
+    blend_irr = _row_weighted_mean(irr_stack, w)
+
     bmat = np.column_stack(breach_cols)
     counts = bmat.astype(np.int32).sum(axis=1)
     wbreach = float(np.mean(bmat @ w))
@@ -138,7 +156,6 @@ def run_portfolio_joint_simulation(
     tail_cf = cf_sum[cf_sum <= p05_cf]
     cvar_cf = float(np.mean(tail_cf)) if tail_cf.size else None
 
-    irr_stack = np.column_stack(irr_cols)
     corr_dscr = _corr_matrix_jsonable(_pairwise_pearson_columns(dscr_stack))
     corr_irr = _corr_matrix_jsonable(_pairwise_pearson_columns(irr_stack))
 
@@ -148,6 +165,9 @@ def run_portfolio_joint_simulation(
         probability_any_covenant_breach=p_any,
         probability_at_least_k_breaches=p_at_least_k,
         min_dscr_across_assets=distribution_summary(min_dscr),
+        max_dscr_across_assets=distribution_summary(max_dscr),
+        revenue_weighted_mean_dscr_across_assets=distribution_summary(blend_dscr),
+        revenue_weighted_mean_equity_irr_across_assets=distribution_summary(blend_irr),
         sum_levered_cf_year1=distribution_summary(cf_sum),
         var_sum_levered_cf_p05=p05_cf,
         cvar_sum_levered_cf_p05=cvar_cf,

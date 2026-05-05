@@ -218,7 +218,8 @@
           <h3 class="results-heading">By asset</h3>
           <p class="results-caption">
             Each row is one asset’s <code>FinancialRiskMetrics</code> from <code>per_asset[]</code> (same shared shocks as the pool).
-            KPI tiles above are <strong>portfolio-wide</strong>. <strong>Correlation:</strong> macro-factor and cross-asset ρ tables are in the <strong>next panel below</strong> (scroll down if needed).
+            KPI tiles above combine paths across assets: <strong>min</strong> (weakest link), <strong>blend</strong> (revenue-weighted mean DSCR/IRR each scenario), <strong>max</strong> (strongest asset each scenario), plus breach and cashflow views.
+            <strong>Correlation:</strong> macro-factor and cross-asset ρ tables are in the <strong>next panel below</strong> (scroll down if needed).
           </p>
           <div class="table-wrap">
             <table class="data" id="pfAssetTable"></table>
@@ -231,6 +232,10 @@
           <div class="results-panel">
             <h3 class="results-heading">Min DSCR (across pool) — sketch</h3>
             <div id="pfHistMinDscr" class="pseudo-hist-wrap"></div>
+          </div>
+          <div class="results-panel">
+            <h3 class="results-heading">Blend DSCR (pool) — sketch</h3>
+            <div id="pfHistBlendDscr" class="pseudo-hist-wrap"></div>
           </div>
           <div class="results-panel">
             <h3 class="results-heading">Σ levered CF (Y1) — sketch</h3>

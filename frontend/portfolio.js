@@ -749,7 +749,7 @@
           '<p class="results-caption">' +
           "Pearson ρ of path <strong>DSCR</strong> and path <strong>IRR</strong> between sites — same Monte Carlo row = same macro world. Colour = strength of co-movement.</p>" +
           '<p class="results-caption results-caption--tight">' +
-          "Why wind–solar ρ can match a <strong>2-asset</strong> run: each pair uses only those two scenario paths; adding storage does not reshock wind or solar (same <code>Z</code>, independent asset models). Portfolio-wide tiles (any breach, min DSCR pool) <em>do</em> change with more names.</p>" +
+          "Portfolio-wide tiles: <strong>min / blend / max</strong> DSCR are three ways to aggregate each Monte Carlo path (weakest asset, revenue-weighted average, strongest asset). <strong>Blend equity IRR</strong> uses the same revenue weights — it is not the IRR of pooled cashflows as one project.</p>" +
           '<div class="corr-matrix-grid">' +
           buildCorrelationHeatmapBlock("DSCR × DSCR", assetIds, d, "Numeric ρ — DSCR") +
           (isSquareCorrelationMatrix(assetIds, ir)
@@ -782,6 +782,9 @@
     if (!row || !portfolio) return;
 
     const minD = portfolio.min_dscr_across_assets || {};
+    const blendD = portfolio.revenue_weighted_mean_dscr_across_assets || {};
+    const blendI = portfolio.revenue_weighted_mean_equity_irr_across_assets || {};
+    const maxD = portfolio.max_dscr_across_assets || {};
     const tiles = [
       {
         k: "P(any covenant breach)",
@@ -794,9 +797,24 @@
         sub: meta && meta.run_id ? "run " + meta.run_id.slice(0, 8) + "…" : "",
       },
       {
-        k: "Min DSCR across pool (p50)",
+        k: "Min DSCR — pool (p50)",
         v: minD.p50 != null ? fmtNum(minD.p50, 3) : "—",
-        sub: "Worst name in each path, then median",
+        sub: "Weakest name each path, then median",
+      },
+      {
+        k: "Blend DSCR — pool (p50)",
+        v: blendD.p50 != null ? fmtNum(blendD.p50, 3) : "—",
+        sub: "Revenue-weighted mean of asset DSCRs each path (see API)",
+      },
+      {
+        k: "Max DSCR — pool (p50)",
+        v: maxD.p50 != null ? fmtNum(maxD.p50, 3) : "—",
+        sub: "Strongest name each path, then median",
+      },
+      {
+        k: "Blend equity IRR (p50)",
+        v: blendI.p50 != null ? fmtNum(100 * blendI.p50, 2) + "%" : "—",
+        sub: "Revenue-weighted IRR paths — not fund-level IRR",
       },
       {
         k: "Weighted breach exposure",
@@ -868,11 +886,18 @@
     renderCorrelationSection(portfolio, meta);
 
     const minD = portfolio.min_dscr_across_assets;
+    const blendHist = portfolio.revenue_weighted_mean_dscr_across_assets;
     renderPseudoHistogram(
       "pfHistMinDscr",
       minD,
       (x) => fmtNum(x, 3),
       "Min DSCR (worst asset per scenario)"
+    );
+    renderPseudoHistogram(
+      "pfHistBlendDscr",
+      blendHist,
+      (x) => fmtNum(x, 3),
+      "Blend DSCR (revenue-weighted mean per scenario)"
     );
 
     const cf = portfolio.sum_levered_cf_year1;

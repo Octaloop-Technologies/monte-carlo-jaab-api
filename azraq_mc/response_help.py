@@ -69,16 +69,18 @@ PORTFOLIO_SIMULATION_RESULT = help_block(
     ),
     what_you_received=(
         "You get risk results **per project** and **for the whole book**: chance **any** site breaks a covenant, "
-        "weakest debt cover across sites, and how concentrated revenue is."
+        "weakest (`min`), strongest (`max`), and revenue-**weighted blend** debt cover paths across sites as a group, "
+        "plus concentration and summed cash-flow tails."
     ),
     findings_and_next_steps=(
         "The ‘any breach’ probability is **not** the sum of each site’s probability—shared bad luck matters. "
-        "Look at the weakest debt cover across assets to see the weakest link."
+        "Compare **min** DSCR across names (weakest link) with the **revenue-weighted blend** and **max** per "
+        "path to see concentrated risk vs diluted headline cover."
     ),
     glossary={
         "metadata": "Portfolio name, list of assets, how many worlds were run, and the macro factor correlation matrix used for draws.",
         "per_asset": "Each site’s risk numbers, same style as a single-asset run.",
-        "portfolio": "Whole-book numbers: joint breach risk, weakest link, totals.",
+        "portfolio": "Whole-book numbers: joint breach risk, weakest link (min path DSCR), revenue-weighted blend and max path DSCR, totals.",
         "cross_asset_dscr_correlation_pearson": (
             "How strongly each asset’s debt cover moves with another’s **across scenarios** "
             "(same random draw index)—not the factor correlation you typed into the shock pack."

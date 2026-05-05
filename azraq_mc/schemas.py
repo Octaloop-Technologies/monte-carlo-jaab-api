@@ -690,7 +690,24 @@ class PortfolioMetrics(BaseModel):
     probability_at_least_k_breaches: dict[str, float] = Field(
         default_factory=dict, description='Keys "2","3",… as strings for JSON stability'
     )
-    min_dscr_across_assets: DistributionSummary
+    min_dscr_across_assets: DistributionSummary = Field(
+        description="Per scenario: smallest path DSCR among assets; summarized over scenarios (weakest-link view)"
+    )
+    max_dscr_across_assets: DistributionSummary = Field(
+        description="Per scenario: largest path DSCR among assets — opposite tail vs min_pool"
+    )
+    revenue_weighted_mean_dscr_across_assets: DistributionSummary = Field(
+        description=(
+            "Per scenario: Σ wᵢ·DSCRᵢ with wᵢ ∝ base revenue; same weights as "
+            "weighted covenant exposure / HHI — blend view vs min/max per path"
+        )
+    )
+    revenue_weighted_mean_equity_irr_across_assets: DistributionSummary = Field(
+        description=(
+            "Revenue-weighted mean of asset equity IRR paths per scenario — intuitive blend, "
+            "not the IRR of consolidated cashflows as one project"
+        )
+    )
     sum_levered_cf_year1: DistributionSummary
     var_sum_levered_cf_p05: float | None = Field(
         default=None, description="5th percentile of summed Year-1 levered CF after tax (downside)"
