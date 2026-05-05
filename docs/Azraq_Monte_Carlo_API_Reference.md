@@ -4,7 +4,9 @@
 
 **Live:** [Swagger UI](https://monte-carlo.octaloop.dev/docs#/) · `https://monte-carlo.octaloop.dev/openapi.json` · local `http://127.0.0.1:8000`
 
-**Print PDF:** from repo root run `python scripts/build_api_reference_pdf.py` (renders this file). For extra schema narrative and examples beyond OpenAPI, see **[API.md](API.md)**. A route-only catalogue lives in **[ENDPOINTS.md](ENDPOINTS.md)** if you prefer a shorter list.
+**PDF / document revision:** **1.1.0** (2026-05-05). This tracks **changes to this reference export** — it is **not** the **`/v1/`** REST prefix, and **not** the optional **`semver`** query default (**`1.0.0`**) on **`POST /v1/shockpack/catalog/register`**.
+
+**Print PDF:** from repo root run `python scripts/build_api_reference_pdf.py` (writes **`docs/Azraq_Monte_Carlo_API_Reference.pdf`** and a copy **`API_Reference.pdf`** at repo root). For extra schema narrative and examples beyond OpenAPI, see **[API.md](API.md)**. A route-only catalogue lives in **[ENDPOINTS.md](ENDPOINTS.md)** if you prefer a shorter list.
 
 ---
 
@@ -766,8 +768,8 @@ Legend: **Path** / **Query** / **Body** = where parameters go. **Auth** = needs 
 |--|--|
 | **Purpose** | **Joint** Monte Carlo for **≥ 2** assets (same shock draw per scenario across names). |
 | **Body** | **`PortfolioSimulationRequest`**: **`shockpack`** or catalogue id; **`portfolio_id`**, **`portfolio_assumption_set_id`**, **`assets`** (array length ≥ 2); optional **`performance_profile`**. |
-| **Response** | **`PortfolioSimulationResult`**: **`metadata`**, **`per_asset`**, **`portfolio`** (e.g. **`probability_any_covenant_breach`**, **`min_dscr_across_assets`**). |
-| **Usage** | Portfolio concentration; joint breach ≠ sum of silo runs. |
+| **Response** | **`PortfolioSimulationResult`**: **`metadata`** (includes **`factor_order`**, **`factor_correlation`**, **`copula`** from the resolved shock pack), **`per_asset[]`** (same shape as single-asset **`metrics`**), **`portfolio`** — jointly computed pool metrics (**§IV.6.3.1**). |
+| **Usage** | Portfolio concentration; joint breach ≠ sum of silo runs; compare weakest-link vs blended vs max DSCR paths and blend IRR tails on **`portfolio`**. |
 | **Auth** | Optional key. |
 
 ### `WebSocket` `WS /ws/v1/simulate/portfolio`
@@ -925,6 +927,28 @@ Use **`https://monte-carlo.octaloop.dev`** as the host for the paths in §IV.4 (
 | `ebitda`, `levered_cf`, `nav_proxy_equity`, … | Other **`DistributionSummary`** blocks when enabled by model path. |
 
 Always read **`metadata`** for **`run_id`**, **`seed`**, **`n_scenarios`**, **`compute_time_ms`**, **`shockpack_id`**, optional **`margin_calibration_trace`** (if Yahoo/file/http calibration ran).
+
+### IV.6.3.1 `PortfolioSimulationResult` — **`portfolio`** object (`PortfolioMetrics`)
+
+**`per_asset[i].metrics`** is the same family as **`POST /v1/simulate/asset`**. **`portfolio`** adds **whole-book views** derived from **the same Monte Carlo paths** (one shock draw index shared across assets).
+
+| Field | Meaning |
+|-------|---------|
+| **`probability_any_covenant_breach`** | Share of scenarios where **at least one** asset breaches its covenant. |
+| **`probability_at_least_k_breaches`** | **`"2"`**, **`"3"`**, … for **multiple simultaneous** breaches (`k` ≥ 2). |
+| **`min_dscr_across_assets`** | **`DistributionSummary`**: each scenario uses the **minimum** path DSCR across assets (weakest-link view). |
+| **`max_dscr_across_assets`** | **`DistributionSummary`**: each scenario uses the **maximum** path DSCR across assets (strongest name). |
+| **`revenue_weighted_mean_dscr_across_assets`** | **`DistributionSummary`**: each scenario **`Σ wᵢ·DSCRᵢ`** with **`wᵢ ∝ base_revenue_annual`** — **blend** at the portfolio level (**not** a merged waterfall statement). Same weights underlie **`weighted_covenant_breach_exposure`** / **`revenue_herfindahl`**. |
+| **`revenue_weighted_mean_equity_irr_across_assets`** | **`DistributionSummary`**: revenue-weighted mean equity IRR paths (blend; **not** consolidated-fund IRR from pooled cashflows). |
+| **`var_irr_95`** / **`cvar_irr_95`** | **Same conventions** as **`SimulationResult.metrics`**: IRR tail shortfall (**median − p05**) and **mean IRR in worst ~5%** on the **revenue-weighted blend IRR** series. |
+| **`sum_levered_cf_year1`** | **`DistributionSummary`** of summed **year-1** after-tax levered CF across assets. |
+| **`var_sum_levered_cf_p05`** / **`cvar_sum_levered_cf_p05`** | Raw **p05** summed CF level and mean CF in scenarios at/below it (portfolio cashflow downside). |
+| **`revenue_herfindahl`** | **`Σ wᵢ²`** concentration on revenue weights **`wᵢ`**. |
+| **`weighted_covenant_breach_exposure`** | **`E[Σ wᵢ·𝟙(breachᵢ)]`** — revenue-weighted covenant stress simultaneously across names. |
+| **`cross_asset_dscr_correlation_pearson`** | Symmetric Pearson **ρ** of **scenario-by-scenario** **DSCR paths** (row/column order matches **`metadata.asset_ids`**). Output co-movement, **not** the 4×4 factor **`correlation`** input matrix. |
+| **`cross_asset_equity_irr_correlation_pearson`** | Same for **IRR paths** (order matches **`metadata.asset_ids`**). |
+
+Macro **factor ρ** assumed for shocks appears on **`PortfolioRunMetadata`** as **`factor_order`**, **`factor_correlation`**, **`copula`**.
 
 ### IV.6.4 Example: health check (no API key)
 

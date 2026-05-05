@@ -7,6 +7,7 @@ Usage (repo root):
 Steps:
   1. Reads docs/Azraq_Monte_Carlo_API_Reference.md (does not modify it)
   2. Renders Markdown -> HTML -> PDF -> docs/Azraq_Monte_Carlo_API_Reference.pdf
+  3. Copies the same PDF to API_Reference.pdf at repo root (convenience copy)
 
 PDF engine (first available):
   A) Microsoft Edge/Chromium --headless --print-to-pdf (no extra installs)
@@ -32,7 +33,8 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_MD = ROOT / "docs" / "Azraq_Monte_Carlo_API_Reference.md"
-PDF_OUT = ROOT / "docs" / "Azraq_Monte_Carlo_API_Reference.pdf"
+PDF_OUT_DOCS = ROOT / "docs" / "Azraq_Monte_Carlo_API_Reference.pdf"
+PDF_OUT_ROOT = ROOT / "API_Reference.pdf"
 HTML_TMP = Path(tempfile.gettempdir()) / "azraq_api_ref_print.html"
 
 PRINT_CSS = """
@@ -118,7 +120,7 @@ def try_md_to_pdf_npx() -> bool:
         return False
     cmd = f'"{npx}" --yes md-to-pdf "{SOURCE_MD}"'
     r = subprocess.run(cmd, cwd=str(ROOT), shell=True, timeout=300)
-    return r.returncode == 0 and PDF_OUT.is_file()
+    return r.returncode == 0 and PDF_OUT_DOCS.is_file()
 
 
 def main() -> int:
@@ -131,13 +133,16 @@ def main() -> int:
     HTML_TMP.write_text(html, encoding="utf-8")
 
     chrome = _find_chrome()
-    if chrome and print_html_to_pdf(chrome, HTML_TMP, PDF_OUT):
-        print(f"Wrote {PDF_OUT} (via headless browser)")
+    if chrome and print_html_to_pdf(chrome, HTML_TMP, PDF_OUT_DOCS):
+        shutil.copy2(PDF_OUT_DOCS, PDF_OUT_ROOT)
+        print(f"Wrote {PDF_OUT_DOCS} and {PDF_OUT_ROOT} (via headless browser)")
         return 0
 
     print("Headless Chrome/Edge not found or failed; trying npx md-to-pdf ...")
     if try_md_to_pdf_npx():
-        print(f"Wrote {PDF_OUT} (via md-to-pdf)")
+        if PDF_OUT_DOCS.is_file():
+            shutil.copy2(PDF_OUT_DOCS, PDF_OUT_ROOT)
+        print(f"Wrote {PDF_OUT_DOCS} (via md-to-pdf); copied to {PDF_OUT_ROOT}")
         return 0
 
     # Fallback: leave HTML next to docs for manual Print to PDF

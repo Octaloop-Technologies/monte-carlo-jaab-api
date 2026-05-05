@@ -9,7 +9,7 @@ Azraq Monte Carlo risk engine — single FastAPI app (`azraq_mc`).
 
 **All endpoints (parameters, bodies, responses, usage):** **[docs/ENDPOINTS.md](docs/ENDPOINTS.md)** (includes a **numbered inventory of all 21** routes + `/docs` / `/openapi.json` / `/app`). Alternate layout: **[docs/API_ENDPOINTS_REFERENCE.md](docs/API_ENDPOINTS_REFERENCE.md)**.
 
-**PDF export (same content, print-ready):** **[docs/Azraq_Monte_Carlo_API_Reference.pdf](docs/Azraq_Monte_Carlo_API_Reference.pdf)** — regenerate with `python scripts/build_api_reference_pdf.py` (needs **Markdown** + **Edge** or **Chrome** headless; see script docstring).
+**PDF export (same content, print-ready):** **[docs/Azraq_Monte_Carlo_API_Reference.pdf](docs/Azraq_Monte_Carlo_API_Reference.pdf)** (synonym: **[API_Reference.pdf](API_Reference.pdf)** at repo root) — regenerate with `python scripts/build_api_reference_pdf.py` (writes both paths; needs **Markdown** + **Edge** or **Chrome** headless; see script docstring).
 
 ## Run
 
