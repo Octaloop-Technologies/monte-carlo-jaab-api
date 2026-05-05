@@ -80,13 +80,23 @@ PORTFOLIO_SIMULATION_RESULT = help_block(
     glossary={
         "metadata": "Portfolio name, list of assets, how many worlds were run, and the macro factor correlation matrix used for draws.",
         "per_asset": "Each site’s risk numbers, same style as a single-asset run.",
-        "portfolio": "Whole-book numbers: joint breach risk, weakest link (min path DSCR), revenue-weighted blend and max path DSCR, totals.",
+        "portfolio": (
+            "Whole-book numbers: joint breach risk; min/blend/max path DSCR; "
+            "**var_irr_95**/**cvar_irr_95** on the revenue-weighted equity-IRR blend (same tail conventions as single-asset metrics); tails of summed levered CF; concentration."
+        ),
         "cross_asset_dscr_correlation_pearson": (
             "How strongly each asset’s debt cover moves with another’s **across scenarios** "
             "(same random draw index)—not the factor correlation you typed into the shock pack."
         ),
         "cross_asset_equity_irr_correlation_pearson": (
             "Same idea for equity IRR paths scenario-by-scenario."
+        ),
+        "var_irr_95": (
+            "**Portfolio**: median minus p05 **revenue-weighted blend** equity IRR (same headline definition as "
+            "single-asset metrics, applied to `revenue_weighted_mean_equity_irr_across_assets`, not fund-level IRR)."
+        ),
+        "cvar_irr_95": (
+            "**Portfolio**: mean blend equity IRR in the worst 5% of scenarios — same convention as single-asset CVaR on IRR."
         ),
         "factor_correlation": (
             "Macro shock factors move together with these Pearson ρs (revenue, capex, opex, rate style axes)—"

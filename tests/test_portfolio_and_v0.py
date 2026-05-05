@@ -41,6 +41,10 @@ def test_portfolio_first_asset_matches_standalone():
     joint = run_portfolio_joint_simulation(shock, "pf-1", "pas-1", [a1, _a2()])
     assert joint.per_asset[0].metrics.dscr.p50 == solo.metrics.dscr.p50
     assert joint.portfolio.n_assets == 2
+    v_irr = joint.portfolio.var_irr_95
+    c_irr = joint.portfolio.cvar_irr_95
+    assert v_irr is not None and c_irr is not None
+    assert np.isfinite(v_irr) and np.isfinite(c_irr)
     assert 0.0 <= joint.portfolio.probability_any_covenant_breach <= 1.0
     mn_m = joint.portfolio.min_dscr_across_assets.mean
     mx_m = joint.portfolio.max_dscr_across_assets.mean

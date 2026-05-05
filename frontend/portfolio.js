@@ -817,6 +817,17 @@
         sub: "Revenue-weighted IRR paths — not fund-level IRR",
       },
       {
+        k: "VaR IRR (95%) — blend",
+        v: portfolio.var_irr_95 != null ? fmtNum(portfolio.var_irr_95, 4) : "—",
+        sub: "Median − p05 on blend IRR (same units & definition as single-asset VaR IRR)",
+      },
+      {
+        k: "CVaR IRR — blend",
+        v:
+          portfolio.cvar_irr_95 != null ? fmtNum(100 * portfolio.cvar_irr_95, 2) + "%" : "—",
+        sub: "Mean blend equity IRR in worst 5% of paths",
+      },
+      {
         k: "Weighted breach exposure",
         v:
           portfolio.weighted_covenant_breach_exposure != null

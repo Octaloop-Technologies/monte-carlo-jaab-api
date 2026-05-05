@@ -708,6 +708,20 @@ class PortfolioMetrics(BaseModel):
             "not the IRR of consolidated cashflows as one project"
         )
     )
+    var_irr_95: float | None = Field(
+        default=None,
+        description=(
+            "Same convention as per-asset `FinancialRiskMetrics.var_irr_95`: median minus p05 equity IRR "
+            "on the **revenue-weighted blend IRR** path (annual units, not consolidated-fund IRR)"
+        ),
+    )
+    cvar_irr_95: float | None = Field(
+        default=None,
+        description=(
+            "Mean blend equity IRR in the worst 5% of scenarios — aligns with per-asset `cvar_irr_95` "
+            "applied to the revenue-weighted IRR path"
+        ),
+    )
     sum_levered_cf_year1: DistributionSummary
     var_sum_levered_cf_p05: float | None = Field(
         default=None, description="5th percentile of summed Year-1 levered CF after tax (downside)"

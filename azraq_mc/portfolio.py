@@ -10,7 +10,7 @@ import numpy as np
 from azraq_mc.calibration_sources import materialize_shockpack_margins
 from azraq_mc.cache import get_or_build_shock_array
 from azraq_mc.impact import financial_impact
-from azraq_mc.metrics import build_financial_metrics, distribution_summary
+from azraq_mc.metrics import build_financial_metrics, distribution_summary, var_cvar_irr
 from azraq_mc.performance import apply_performance_profile
 from azraq_mc.schemas import (
     AssetAssumptions,
@@ -143,6 +143,7 @@ def run_portfolio_joint_simulation(
 
     irr_stack = np.column_stack(irr_cols)
     blend_irr = _row_weighted_mean(irr_stack, w)
+    irr_var, irr_cvar = var_cvar_irr(blend_irr)
 
     bmat = np.column_stack(breach_cols)
     counts = bmat.astype(np.int32).sum(axis=1)
@@ -168,6 +169,8 @@ def run_portfolio_joint_simulation(
         max_dscr_across_assets=distribution_summary(max_dscr),
         revenue_weighted_mean_dscr_across_assets=distribution_summary(blend_dscr),
         revenue_weighted_mean_equity_irr_across_assets=distribution_summary(blend_irr),
+        var_irr_95=irr_var,
+        cvar_irr_95=irr_cvar,
         sum_levered_cf_year1=distribution_summary(cf_sum),
         var_sum_levered_cf_p05=p05_cf,
         cvar_sum_levered_cf_p05=cvar_cf,
