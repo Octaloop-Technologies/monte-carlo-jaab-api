@@ -1028,16 +1028,4 @@ Open **[Swagger UI](https://monte-carlo.octaloop.dev/docs#/)**, expand **`POST /
 
 ---
 
-## Related reference files (repo)
-
-| File | Role |
-|------|------|
-| **[API.md](API.md)** | Full narrative, examples, **`response_help`**, security notes, shared types |
-| **[ENDPOINTS.md](ENDPOINTS.md)** | Shorter endpoint catalogue |
-| **[INTEGRATION.md](INTEGRATION.md)** | Short integration guide (also Part II in this file) |
-| **[MONTE_CARLO_FLOW_AND_VALIDATION.md](MONTE_CARLO_FLOW_AND_VALIDATION.md)** | Flow-only doc (also Part III in this file) |
-| **`Azraq_Monte_Carlo_API_Reference.pdf`** | Print-ready PDF from `python scripts/build_api_reference_pdf.py` |
-
----
-
 *End of complete guide.*
